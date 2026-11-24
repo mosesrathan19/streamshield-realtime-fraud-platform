@@ -1,6 +1,6 @@
 # StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
 
-> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming verified locally; PostgreSQL, monitoring, and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
+> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming verified locally; Phase 4 PostgreSQL analytics code is committed for local verification; monitoring and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
 
 ## Why this project
 
@@ -108,6 +108,10 @@ The unique event count equals the persisted row count, showing no duplicate even
 
 The local Spark run emitted informational/warning log messages about network binding and native Hadoop libraries; its final Parquet verification query succeeded.
 
+## Phase 4: PostgreSQL analytics
+
+Phase 4 adds a local [PostgreSQL analytics setup guide](docs/PHASE4_POSTGRES.md), a Docker PostgreSQL service, an idempotent loader from Spark Parquet, transaction constraints/indexes, and daily/category KPI views. This stage is **committed but not yet executed on the user's Mac**; it is a batch/backfill sink, not continuous Spark-to-PostgreSQL streaming.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -115,7 +119,7 @@ The local Spark run emitted informational/warning log messages about network bin
 | 1 | Generator, schema, local risk rules, replay tests, CI | Implemented |
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
-| 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Planned |
+| 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Implemented in code; local verification pending |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | Planned |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
