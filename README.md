@@ -1,6 +1,6 @@
 # StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
 
-> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** PySpark Structured Streaming, PostgreSQL, monitoring, and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
+> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming code is available for local verification; PostgreSQL, monitoring, and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
 
 ## Why this project
 
@@ -90,13 +90,17 @@ The local macOS Docker deployment was exercised with Apache Kafka 4.1.1. The use
 
 **Interpretation:** This verifies the local Kafka producer/consumer path and replay-safe persisted effects in SQLite. The producer rate of about 7,770 acknowledged messages per second is **not** an end-to-end streaming throughput or latency benchmark. The original offset/consumer-run history was not comprehensively instrumented; the replay result was verified independently. Fraud-risk alerts come from illustrative rules over synthetic events. The reserved alert and DLQ Kafka topics are not yet populated by the consumer.
 
+## Phase 3: Spark Structured Streaming
+
+The new [Spark + Kafka setup guide](docs/PHASE3_SPARK.md) describes Spark 3.5.6, its matching Kafka connector, event-time deduplication and console window updates. Code is committed but **no Spark execution result has been verified yet**.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
 |---|---|---|
 | 1 | Generator, schema, local risk rules, replay tests, CI | Implemented |
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
-| 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Planned |
+| 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Implemented in code; local run pending |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Planned |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | Planned |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
