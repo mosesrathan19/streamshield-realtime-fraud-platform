@@ -1,6 +1,6 @@
 # StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
 
-> **Status: Phase 1 implemented, locally tested and benchmarked.** Kafka, PySpark Structured Streaming, PostgreSQL, monitoring, and scale/load tests are part of the staged roadmap, **not yet implemented or validated**. Synthetic data only. No real payment data or fraud decisions.
+> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker code committed (runtime validation pending).** PySpark Structured Streaming, PostgreSQL, monitoring, and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
 
 ## Why this project
 
@@ -69,12 +69,16 @@ A local benchmark processed **1,000,000 synthetic JSONL transactions** into the 
 - **Fraud accuracy:** Synthetic labels are for unit tests and sample data. No real-world precision, recall, or false-positive claims are made.
 - **Performance:** Always distinguish file generation, local SQLite processing, and future Kafka/Spark streaming. The local benchmark excludes generation time.
 
+## Phase 2: Kafka local demo
+
+See [Kafka + Docker setup and verification](docs/PHASE2_KAFKA_LOCAL.md). This phase adds a single-node Kafka KRaft broker, six-partition transactions topic, an idempotent Python event producer and a local replay-safe consumer. Kafka runtime throughput has not yet been measured.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
 |---|---|---|
 | 1 | Generator, schema, local risk rules, replay tests, CI | Implemented |
-| 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Planned |
+| 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Implemented in code; local run pending |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Planned |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Planned |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | Planned |
