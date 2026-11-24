@@ -1,0 +1,11 @@
+{
+  "read": 1000000,
+  "inserted": 1000000,
+  "duplicate": 0,
+  "rejected": 0,
+  "alerts": 16085,
+  "processing_seconds": 11.538,
+  "processing_events_per_second": 86670.1,
+  "environment": "Linux x86_64 | Python 3.13.5",
+  "benchmark_type": "local JSONL to SQLite, no Kafka or Spark"
+}
