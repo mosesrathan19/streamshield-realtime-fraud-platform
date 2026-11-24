@@ -67,7 +67,7 @@ def load(parquet_dir: str, dsn: str, batch_size: int = 1000) -> dict:
             raise ValueError("Parquet input has duplicate event_id values")
         schema_sql = (Path(__file__).resolve().parents[2] / "sql" / "001_schema.sql").read_text()
         inserted = 0
-        with psycopg.connect(dsn) as con:
+        with psycopg.connect(dsn, autocommit=True) as con:
             with con.cursor() as cur:
                 cur.execute(schema_sql)
             # One DB transaction per chunk: retries cause no new duplicate rows.
