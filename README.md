@@ -1,6 +1,6 @@
 # StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
 
-> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming code is available for local verification; PostgreSQL, monitoring, and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
+> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming verified locally; PostgreSQL, monitoring, and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
 
 ## Why this project
 
@@ -94,13 +94,27 @@ The local macOS Docker deployment was exercised with Apache Kafka 4.1.1. The use
 
 The new [Spark + Kafka setup guide](docs/PHASE3_SPARK.md) describes Spark 3.5.6, its matching Kafka connector, event-time deduplication and console window updates. Code is committed but **no Spark execution result has been verified yet**.
 
+## Verified Phase 3 PySpark results (November 24, 2026)
+
+The PySpark 3.5.6 Structured Streaming job completed on a local macOS environment using Java 17 and Kafka 4.1.1. The persisted Parquet output was independently queried with Spark SQL aggregation:
+
+| Metric | Observed count |
+|---|---:|
+| Persisted transactions | **10,000** |
+| Distinct `event_id` values | **10,000** |
+| Synthetic fraud-risk flags | **161** |
+
+The unique event count equals the persisted row count, showing no duplicate event IDs **in the verified output**. The 161 synthetic risk flags match the Phase 2 SQLite alert count. This verifies the Kafka → Spark → Parquet path for this dataset and configuration; it does not yet establish recovery correctness, late-data behavior under injected disorder, production fault tolerance, or distributed scale performance.
+
+The local Spark run emitted informational/warning log messages about network binding and native Hadoop libraries; its final Parquet verification query succeeded.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
 |---|---|---|
 | 1 | Generator, schema, local risk rules, replay tests, CI | Implemented |
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
-| 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Implemented in code; local run pending |
+| 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Planned |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | Planned |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
