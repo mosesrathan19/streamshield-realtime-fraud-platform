@@ -9,6 +9,9 @@ description = "Synthetic streaming fraud platform: generator, explainable signal
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+kafka = ["confluent-kafka>=2.6,<3"]
+
 [project.scripts]
 streamshield = "streamshield.cli:main"
 
