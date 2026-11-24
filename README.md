@@ -1,6 +1,6 @@
 # StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
 
-> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker code committed (runtime validation pending).** PySpark Structured Streaming, PostgreSQL, monitoring, and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
+> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** PySpark Structured Streaming, PostgreSQL, monitoring, and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
 
 ## Why this project
 
@@ -73,12 +73,29 @@ A local benchmark processed **1,000,000 synthetic JSONL transactions** into the 
 
 See [Kafka + Docker setup and verification](docs/PHASE2_KAFKA_LOCAL.md). This phase adds a single-node Kafka KRaft broker, six-partition transactions topic, an idempotent Python event producer and a local replay-safe consumer. Kafka runtime throughput has not yet been measured.
 
+## Verified Phase 2 local Kafka results (November 24, 2026)
+
+The local macOS Docker deployment was exercised with Apache Kafka 4.1.1. The user-observed run reported:
+
+| Check | Observed result |
+|---|---:|
+| Kafka broker | Docker container healthy |
+| Topics created | 3 |
+| Transactions produced / acknowledged | 10,000 / 10,000 |
+| Producer elapsed time | 1.287 s |
+| Producer failed / unflushed | 0 / 0 |
+| Durable SQLite transactions | 10,000 |
+| Stored synthetic fraud-risk alerts | 161 |
+| Fresh consumer group replay | 10,000 read, 10,000 duplicates, 0 inserted, 0 invalid, 0 new alerts |
+
+**Interpretation:** This verifies the local Kafka producer/consumer path and replay-safe persisted effects in SQLite. The producer rate of about 7,770 acknowledged messages per second is **not** an end-to-end streaming throughput or latency benchmark. The original offset/consumer-run history was not comprehensively instrumented; the replay result was verified independently. Fraud-risk alerts come from illustrative rules over synthetic events. The reserved alert and DLQ Kafka topics are not yet populated by the consumer.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
 |---|---|---|
 | 1 | Generator, schema, local risk rules, replay tests, CI | Implemented |
-| 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Implemented in code; local run pending |
+| 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Planned |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Planned |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | Planned |
