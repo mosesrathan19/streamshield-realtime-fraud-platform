@@ -136,6 +136,21 @@ This validates a **local replay-safe Parquet-to-PostgreSQL batch/backfill load**
 
 [Phase 5 recovery test instructions](docs/PHASE5_RECOVERY.md) use a **separate PostgreSQL database**. The loader can deliberately throw a `SIMULATED_FAILURE_AFTER_COMMIT` exception after a configured number of successful transaction batches. Replaying the source should insert only missing events and preserve one row per event ID. Code and unit tests are committed; **the crash/recovery scenario has not yet been run locally**, and the Kafka/Spark failure, watermark/late-data and DLQ tests remain outstanding.
 
+## Verified Phase 5 PostgreSQL crash/recovery test (November 25, 2026)
+
+A local macOS test injected an intentional failure **after two committed batches of 1,000 rows** in an isolated PostgreSQL database (`streamshield_recovery_v1`).
+
+| Measurement | Observed |
+|---|---:|
+| Persisted before simulated failure | 2,000 transactions |
+| Synthetic risk flags before failure | 29 |
+| Newly inserted on recovery | 8,000 |
+| Total persisted after recovery | 10,000 |
+| Total risk flags after recovery | 161 |
+| Distinct source event IDs | 10,000 |
+
+The loader raised the expected `SIMULATED_FAILURE_AFTER_COMMIT` error; rerunning it without injection restored the full dataset. This verifies a **manual retry of an idempotent PostgreSQL batch/backfill sink** after a post-commit failure; it does not yet demonstrate Kafka broker failure, Spark checkpoint recovery, late-arriving events, automatic restart, or end-to-end exactly-once delivery. An additional no-op replay can further confirm zero newly inserted rows.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -144,7 +159,7 @@ This validates a **local replay-safe Parquet-to-PostgreSQL batch/backfill load**
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL post-commit fault-injection code ready; local verification pending |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery verified; Kafka/Spark recovery, late data and DLQ pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
