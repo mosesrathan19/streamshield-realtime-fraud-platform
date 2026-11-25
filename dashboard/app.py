@@ -16,6 +16,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data import benchmarks, postgres_snapshots, DEFAULT_DSN
 from health import dependency_checks, report_checks
+from kafka_observability import kafka_topic_offsets
 
 st.set_page_config(
     page_title="StreamShield | Streaming Analytics",
@@ -60,7 +61,7 @@ def read_benchmarks() -> list[dict]:
 with st.sidebar:
     st.markdown("## 🛡️ StreamShield")
     st.caption("STREAMING ANALYTICS · LOCAL DEV")
-    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Pipeline Architecture"])
+    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Pipeline Architecture"])
     st.divider()
     st.markdown("**Data sources**")
     st.caption("PostgreSQL: historical backfill snapshot")
@@ -206,6 +207,38 @@ elif page == "Transactions & Risk":
 
 elif page == "Performance":
     show_performance(runs)
+
+elif page == "Kafka Topics":
+    st.subheader("Kafka topic offsets — read-only snapshot")
+    st.caption(
+        "Broker metadata and earliest/latest retained offsets, queried on page load "
+        "or refresh. Offset spans are not exact message counts and are NOT consumer lag."
+    )
+    try:
+        offsets = kafka_topic_offsets()
+    except Exception as exc:
+        st.warning("Kafka offset inspection unavailable. Check broker health and "
+                   "STREAMSHIELD_KAFKA_BOOTSTRAP.")
+        st.caption(f"{type(exc).__name__}: {exc}")
+    else:
+        if not offsets:
+            st.info("No matching streamshield.* topics found on this Kafka broker.")
+        else:
+            df = pd.DataFrame(offsets)
+            c1, c2, c3 = st.columns(3)
+            c1.metric("Topics inspected", str(df["topic"].nunique()))
+            c2.metric("Partitions inspected", str(len(df)))
+            c3.metric("Retained offset span", f'{int(df["offset_span"].sum()):,}')
+            st.dataframe(df.rename(columns={
+                "topic": "Topic", "partition": "Partition",
+                "earliest": "Earliest retained offset", "latest": "Latest offset",
+                "offset_span": "Retained offset span",
+            }), hide_index=True, use_container_width=True)
+    st.info(
+        "This page does not create a consumer group, consume or commit offsets. "
+        "Kafka log offsets alone cannot tell whether Spark has caught up. "
+        "Spark checkpoint progress and consumer-group lag require separate instrumentation."
+    )
 
 elif page == "System Health":
     st.subheader("Local component reachability")
