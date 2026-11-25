@@ -12,7 +12,7 @@ dependencies = []
 [project.optional-dependencies]
 kafka = ["confluent-kafka>=2.6,<3"]
 postgres = ["psycopg[binary]>=3.2,<4"]
-dashboard = ["streamlit>=1.37,<2", "pandas>=2.0,<3", "psycopg[binary]>=3.2,<4"]
+dashboard = ["streamlit>=1.37,<2", "pandas>=2.0,<3", "psycopg[binary]>=3.2,<4", "confluent-kafka>=2.6,<3"]
 
 [project.scripts]
 streamshield = "streamshield.cli:main"
