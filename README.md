@@ -53,6 +53,18 @@ streamlit run dashboard/app.py
 
 Then visit **http://localhost:8501**. To stop the dashboard, use `Ctrl+C`; source data and checkpoints are preserved. See [full dashboard setup](docs/PHASE7_DASHBOARD.md). The dashboard reads saved benchmark JSON and existing PostgreSQL views; it does not launch streaming jobs or poll live broker lag.
 
+### 🩺 Phase 9 — Optional Docker dashboard and local health checks
+
+A new **System Health** page reports point-in-time Kafka/PostgreSQL TCP reachability and availability of the saved benchmark JSON reports. To build and run the dashboard in its own container, without restarting or deleting your existing data:
+
+```bash
+git pull
+docker compose --profile dashboard up -d --build
+# Open http://localhost:8501, then select System Health
+```
+
+The service mounts `outputs/` **read-only** and is intended for local development. These checks **do not** measure consumer lag, live fraud alerts, or end-to-end latency. **Phase 9 awaits local verification**; see [launch and test instructions](docs/PHASE9_LOCAL_MONITORING.md).
+
 ### ✅ Reliability demonstrated
 
 - **Event uniqueness:** 100K and 1M Kafka → Spark → Parquet outputs reconciled to unique event IDs and contiguous Kafka offsets on six partitions.
