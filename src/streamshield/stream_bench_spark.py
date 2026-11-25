@@ -11,7 +11,7 @@ from pathlib import Path
 from time import perf_counter
 
 from streamshield.spark_stream import SPARK_VERSION, enriched_stream
-from streamshield.stream_bench_fixture import TOPIC, COUNT, START, PARTITIONS
+from streamshield.stream_bench_fixture import TOPIC, TOPIC_V2, COUNT, START, PARTITIONS
 
 OUTPUT = "outputs/spark_benchmark_100k"
 
@@ -27,9 +27,11 @@ def check_output_is_fresh(folder: Path):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--brokers", default="127.0.0.1:9092")
+    parser.add_argument("--trial", choices=["v1", "v2"], default="v1")
     args = parser.parse_args()
     from pyspark.sql import SparkSession, functions as F
-    folder = Path(OUTPUT).resolve()
+    topic_name = TOPIC if args.trial == "v1" else TOPIC_V2
+    folder = Path(OUTPUT if args.trial == "v1" else "outputs/spark_benchmark_100k_v2").resolve()
     check_output_is_fresh(folder)
     spark = (SparkSession.builder.master("local[2]")
              .appName("StreamShieldPhase6KafkaSparkBenchmark")
@@ -40,7 +42,7 @@ def main():
         raise RuntimeError(f"Expected Spark {SPARK_VERSION}; got {spark.version}")
     spark.sparkContext.setLogLevel("WARN")
     try:
-        incoming = enriched_stream(spark, args.brokers, "10 minutes", TOPIC)
+        incoming = enriched_stream(spark, args.brokers, "10 minutes", topic_name)
         # This is the same parsing, validation, event-time watermark, duplicate
         # suppression and illustrative risk-rule logic as the primary Spark path.
         query_start = perf_counter()
@@ -62,7 +64,7 @@ def main():
         ).first()
         observed = int(result["persisted_events"])
         payload = {
-            "source_topic": TOPIC,
+            "source_topic": topic_name,
             "expected_input_events": COUNT,
             "persisted_events": observed,
             "distinct_event_ids": int(result["distinct_event_ids"]),
@@ -73,11 +75,19 @@ def main():
             "excludes": ["producer publishing", "SparkSession startup", "post-run verification"],
             "output_dir": str(folder),
         }
-        print(json.dumps(payload, indent=2))
         # Source offset accounting happens in a separate read-only verifier.
         if observed != COUNT or int(result["distinct_event_ids"]) != COUNT:
+            print(json.dumps(payload, indent=2))
             raise RuntimeError("Persisted event count is not the expected 100K; "
                                "do not publish a PASS result; inspect watermark/source offsets")
+        # Write a durable benchmark report only after the full count checks pass.
+        # The path belongs exclusively to this one-shot isolated trial.
+        report = folder / "benchmark_result.json"
+        with report.open("x", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
+            handle.write("\\n")
+        print(json.dumps(payload, indent=2))
+        print(f"Saved benchmark results to: {report}")
     finally:
         spark.stop()
 
