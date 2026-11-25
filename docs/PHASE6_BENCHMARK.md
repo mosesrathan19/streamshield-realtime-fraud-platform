@@ -1,6 +1,6 @@
 # Phase 6 — Reproducible performance benchmarking
 
-**Status:** Phase 6 plan and local baseline instructions committed. No Phase 6 results have yet been measured on the user's Mac.
+**Status:** Phase 6 local JSONL-to-SQLite 100K baseline measured on Mac November 25, 2026. Kafka/Spark streaming benchmarks, p95 latency, resource profiling and million-event scale runs remain pending.
 
 ## Goals
 
@@ -45,6 +45,23 @@ python --version
 ```
 
 **Do not describe these results as Kafka/Spark throughput or real-time end-to-end latency.** This baseline excludes containerized streaming and network delivery.
+
+## Observed macOS 100K results (November 25, 2026)
+
+Environment: macOS 26.6.2 build 25G83, Apple Silicon (`arm64`), Python 3.11.9.
+
+| Field | Fresh ingestion trial | Replay on existing DB |
+|---|---:|---:|
+| Requested/read | 100,000 / 100,000 | 100,000 / 100,000 |
+| Generation seconds | 0.435 | 0.432 |
+| Processing seconds | **0.501** | **0.474** |
+| Processing events/sec | **199,494.0** | **211,121.9** |
+| Inserted | 100,000 | 0 |
+| Duplicates | 0 | 100,000 |
+| Rejected | 0 | 0 |
+| Newly created alerts | 1,608 | 0 |
+
+The initial run reused `outputs/phase6_baseline_100k.db` and measured replay/duplicate handling; it is **not** a fresh-ingestion benchmark. The second run used the new `outputs/phase6_fresh_100k_trial2.db` and measured fresh insertion. Both are local JSONL-to-SQLite tests, exclude Kafka/Spark and exclude synthetic generation from the reported processing throughput. No streaming latency percentile is available.
 
 ## Stage 2 — Streaming benchmark (pending implementation)
 
