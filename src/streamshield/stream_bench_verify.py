@@ -45,13 +45,16 @@ def assess(total: int, distinct_ids: int, invalid_ids: int,
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", default=OUTPUT)
+    parser.add_argument("--trial", choices=["v1", "v2"], default="v1")
     args = parser.parse_args()
     from pyspark.sql import SparkSession, functions as F
     spark = (SparkSession.builder.master("local[2]")
              .appName("StreamShieldPhase6BenchmarkVerifier").getOrCreate())
     spark.sparkContext.setLogLevel("ERROR")
     try:
-        df = spark.read.parquet(args.path)
+        output_path = ("outputs/spark_benchmark_100k_v2/accepted"
+                       if args.trial == "v2" else args.path)
+        df = spark.read.parquet(output_path)
         idx = F.regexp_extract(F.col("event_id"), r"^evt_(\d{12})$", 1)
         checked = df.withColumn("fixture_index", F.when(idx != "", idx.cast("long")))
         metrics = checked.agg(
