@@ -15,6 +15,7 @@ TOPIC = "streamshield.benchmark_100k.v1"
 COUNT = 100_000
 START = 500_000
 PARTITIONS = 6
+TOPIC_V2 = "streamshield.benchmark_100k.v2"
 
 
 def expected_id(i: int) -> str:
@@ -27,17 +28,20 @@ def fixture_event(i: int) -> dict:
     return event_at(START + i)
 
 
-def publish(brokers: str = "127.0.0.1:9092") -> dict:
+def publish(brokers: str = "127.0.0.1:9092", trial: str = "v1") -> dict:
+    if trial not in ("v1", "v2"):
+        raise ValueError("Trial must be v1 or v2")
+    topic_name = TOPIC if trial == "v1" else TOPIC_V2
     from confluent_kafka import Consumer, Producer, TopicPartition
     from confluent_kafka.admin import AdminClient, NewTopic
 
     config = {"bootstrap.servers": brokers, "broker.address.family": "v4"}
     admin = AdminClient(config)
     existing = admin.list_topics(timeout=15).topics
-    if TOPIC not in existing:
-        admin.create_topics([NewTopic(TOPIC, PARTITIONS, 1)])[TOPIC].result(timeout=30)
+    if topic_name not in existing:
+        admin.create_topics([NewTopic(topic_name, PARTITIONS, 1)])[topic_name].result(timeout=30)
     else:
-        topic = existing[TOPIC]
+        topic = existing[topic_name]
         if topic.error is not None or len(topic.partitions) != PARTITIONS:
             raise RuntimeError("Benchmark topic not healthy or partition count mismatch")
 
@@ -49,7 +53,7 @@ def publish(brokers: str = "127.0.0.1:9092") -> dict:
             for retry in range(8):
                 try:
                     low, high = consumer.get_watermark_offsets(
-                        TopicPartition(TOPIC, partition), timeout=5, cached=False)
+                        TopicPartition(topic_name, partition), timeout=5, cached=False)
                     break
                 except Exception as exc:
                     if retry == 7:
@@ -63,7 +67,7 @@ def publish(brokers: str = "127.0.0.1:9092") -> dict:
     finally:
         consumer.close()
 
-    result = {"topic": TOPIC, "attempted": COUNT, "acknowledged": 0,
+    result = {"topic": topic_name, "attempted": COUNT, "acknowledged": 0,
               "failed": 0, "partitions": PARTITIONS}
     producer = Producer({**config, "acks": "all", "enable.idempotence": True,
                          "compression.type": "lz4", "linger.ms": 10,
@@ -79,7 +83,7 @@ def publish(brokers: str = "127.0.0.1:9092") -> dict:
             key = payload["account_id"].encode("utf-8")
             while True:
                 try:
-                    producer.produce(TOPIC, key=key, value=encoded,
+                    producer.produce(topic_name, key=key, value=encoded,
                                      on_delivery=on_delivery)
                     break
                 except BufferError:
@@ -101,8 +105,9 @@ def publish(brokers: str = "127.0.0.1:9092") -> dict:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--brokers", default="127.0.0.1:9092")
+    parser.add_argument("--trial", choices=["v1", "v2"], default="v1")
     args = parser.parse_args()
-    publish(args.brokers)
+    publish(args.brokers, args.trial)
 
 
 if __name__ == "__main__":
