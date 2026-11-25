@@ -292,3 +292,8 @@ The locally saved `outputs/spark_benchmark_1m_v1/benchmark_result.json` was insp
 
 Spark rate was **4.52×** higher in the 1M run, but these are two single runs at different workload sizes and not repeated steady-state throughput experiments. The Spark timing includes query start, `availableNow` processing, checkpointed Parquet completion; it excludes Kafka publishing, SparkSession startup and post-run verification. Producer and Spark figures represent separate measurement scopes, not end-to-end latency or a single concurrent throughput rate. These checks demonstrate local result completeness/uniqueness for this synthetic fixture; they do not imply exactly-once across external sinks.
 
+
+## Phase 7: Read-only Streamlit monitoring dashboard (local UI verification pending)
+
+The [Phase 7 local dashboard guide](docs/PHASE7_DASHBOARD.md) describes a browser application implemented in `dashboard/app.py` with Overview, Transactions & Risk, Performance, and Pipeline Architecture pages. Install using `python -m pip install -e '.[dashboard]'` and launch with `streamlit run dashboard/app.py`. It reads the existing UTC-corrected PostgreSQL **historical snapshot** through read-only SQL and separately loads saved 100K and 1M benchmark JSON reports; it does **not** mix million-event benchmarks into PostgreSQL, start a Spark/Kafka job, or represent a continuously updating production monitor. The implementation and unit tests are committed, but the user's local browser run has not yet been confirmed.
+
