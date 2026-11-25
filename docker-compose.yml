@@ -48,6 +48,30 @@ services:
       timeout: 3s
       retries: 15
 
+  # Optional Phase 9 dashboard: start with "docker compose --profile dashboard up -d --build".
+  # Runs no Spark job and does not consume Kafka messages.
+  dashboard:
+    profiles: ["dashboard"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dashboard
+    ports:
+      - "127.0.0.1:8501:8501"
+    environment:
+      STREAMSHIELD_PG_DSN: "postgresql://streamshield:streamshield_dev_only@postgres:5432/streamshield_utc"
+      STREAMSHIELD_KAFKA_HOST: kafka
+      STREAMSHIELD_KAFKA_PORT: "19092"
+      STREAMSHIELD_PG_HOST: postgres
+      STREAMSHIELD_PG_PORT: "5432"
+    volumes:
+      - ./outputs:/app/outputs:ro
+    depends_on:
+      kafka:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
 volumes:
   kafka_data:
   postgres_data:
