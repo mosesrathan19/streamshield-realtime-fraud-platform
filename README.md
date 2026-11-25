@@ -181,6 +181,10 @@ The [Phase 5D DLQ/quarantine guide](docs/PHASE5_DLQ.md) describes an isolated si
 
 The [Phase 5E forced-crash runbook](docs/PHASE5_SPARK_FORCED_CRASH.md) now provides a guarded single-topic, 300-synthetic-event test. An isolated Spark driver processes Kafka in 50-record micro-batches using a dedicated Parquet sink and checkpoint, then deliberately calls `SIGKILL` on itself after observing completed micro-batches. Independent read-only verification checks partial persisted results and full recovery after restart with the same checkpoint. **Local partial-state and full checkpoint recovery verification passed on November 25, 2026**: after the deliberately interrupted driver run, the independent verifier found 100 persisted transactions with 100 unique event IDs and 100 unique Kafka offsets; after the recovery run it reported PASS with all 300 events, 300 unique IDs and all 300 offsets accounted for. The user subsequently reported completing the final no-new-message recovery rerun; the final verifier output was not pasted, so the unchanged counts for that replay have not been independently inspected. This is driver SIGKILL recovery for a local Parquet sink; it does not prove JVM/broker failover or mid-transaction external-sink recovery.
 
+## Phase 6: Performance measurement (not yet benchmarked on Mac)
+
+The [Phase 6 measurement guide](docs/PHASE6_BENCHMARK.md) starts with a **fresh 100,000-event local JSONL-to-SQLite baseline** to establish machine-specific processing throughput and data correctness. Planned subsequent runs will benchmark Kafka-to-Spark separately, with fresh topics/checkpoints and explicit scope. No macOS Phase 6 results have been measured yet; local file/SQLite throughput must not be represented as Kafka/Spark throughput or p95 event latency.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -190,7 +194,7 @@ The [Phase 5E forced-crash runbook](docs/PHASE5_SPARK_FORCED_CRASH.md) now provi
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; watermark verified; isolated Parquet quarantine and replay verified; forced Spark driver crash and checkpoint recovery verified; final no-op replay and Kafka DLQ publication pending |
-| 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
+| 6 | Million-event load tests, throughput/p95 lag, resource profiling | 100K local benchmark instructions ready; not yet run |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
 **Target stretch goal:** reproducibly ingest and process 5M+ synthetic transactions on appropriately provisioned hardware. No performance or scale result is claimed until actually measured.
