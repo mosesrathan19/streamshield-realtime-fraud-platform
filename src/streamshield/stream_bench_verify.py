@@ -52,7 +52,7 @@ def main():
     spark.sparkContext.setLogLevel("ERROR")
     try:
         df = spark.read.parquet(args.path)
-        idx = F.regexp_extract(F.col("event_id"), r"^evt_(\\d{12})$", 1)
+        idx = F.regexp_extract(F.col("event_id"), r"^evt_(\d{12})$", 1)
         checked = df.withColumn("fixture_index", F.when(idx != "", idx.cast("long")))
         metrics = checked.agg(
             F.count("*").alias("rows"),
