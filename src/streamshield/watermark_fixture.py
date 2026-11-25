@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import time
 from .events import event_at
 
 TOPIC = "streamshield.watermark_test.v1"
@@ -37,7 +38,7 @@ def send(stage: str, brokers: str, topic: str = TOPIC) -> dict:
 
     if topic != TOPIC:
         raise ValueError("This fixture is restricted to its own dedicated topic")
-    admin = AdminClient({"bootstrap.servers": brokers})
+    admin = AdminClient({"bootstrap.servers": brokers, "broker.address.family": "v4"})
     existing = admin.list_topics(timeout=10).topics
     if topic not in existing:
         futures = admin.create_topics([NewTopic(topic, num_partitions=1, replication_factor=1)])
@@ -46,11 +47,27 @@ def send(stage: str, brokers: str, topic: str = TOPIC) -> dict:
         meta = existing[topic]
         if meta.error is not None or len(meta.partitions) != 1:
             raise RuntimeError("fixture topic must exist as a healthy single partition")
-    check = Consumer({"bootstrap.servers": brokers, "group.id": "wm-fixture-preflight",
+    check = Consumer({"bootstrap.servers": brokers, "broker.address.family": "v4",
+                      "group.id": "wm-fixture-preflight",
                       "enable.auto.commit": False})
     try:
-        low, high = check.get_watermark_offsets(TopicPartition(topic, 0), timeout=10,
-                                               cached=False)
+        # The topic leader may still be initializing immediately after create_topics.
+        # Retry transport/leader errors, but NEVER skip the offset guard.
+        last_error = None
+        for attempt in range(6):
+            try:
+                low, high = check.get_watermark_offsets(
+                    TopicPartition(topic, 0), timeout=5, cached=False
+                )
+                break
+            except Exception as exc:
+                last_error = exc
+                if attempt == 5:
+                    raise RuntimeError(
+                        "Could not read Kafka fixture offsets after six attempts; "
+                        "nothing was published. Check Docker broker health."
+                    ) from last_error
+                time.sleep(2)
     finally:
         check.close()
     target = 0 if stage == "seed" else 2
@@ -59,7 +76,8 @@ def send(stage: str, brokers: str, topic: str = TOPIC) -> dict:
                            f"found {low}..{high}. Do not republish; inspect test state.")
     messages = fixture(stage)
     metrics = {"attempted": len(messages), "acknowledged": 0, "failed": 0}
-    producer = Producer({"bootstrap.servers": brokers, "enable.idempotence": True,
+    producer = Producer({"bootstrap.servers": brokers, "broker.address.family": "v4",
+                         "enable.idempotence": True,
                          "acks": "all"})
     def callback(error, message):
         metrics["failed" if error is not None else "acknowledged"] += 1
