@@ -1,6 +1,6 @@
 # Phase 7 — StreamShield browser dashboard (first version)
 
-**Status:** Dashboard implementation and unit tests committed; not yet executed or visually confirmed on the user's Mac.
+**Status:** Locally verified November 25, 2026. The user reported 37 unit tests passed, Kafka and PostgreSQL running, and all dashboard charts and metrics displaying correctly in their Mac browser.
 
 ## What is displayed
 
@@ -68,7 +68,7 @@ If your browser doesn't open by itself, copy that URL into your browser. Leave t
 - **Streamlit email prompt:** you can press Enter to skip providing an email.
 - **Don't deploy to public internet** with embedded development database credentials or local Docker ports exposed.
 
-## Acceptance checklist (not yet user-verified)
+## Acceptance checklist (user-verified November 25, 2026)
 
 1. Unit tests pass.
 2. Browser page opens at localhost:8501.
