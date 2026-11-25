@@ -1,6 +1,6 @@
 # Phase 5 — Failure injection and recovery (development test)
 
-**Current status:** Deterministic PostgreSQL post-commit crash injection and unit tests committed. A local end-to-end recovery run is **pending**. Kafka/Spark process termination, checkpoint recovery, delayed events and DLQ tests remain future Phase 5 work.
+**Current status:** PostgreSQL post-commit failure injection and manual recovery verified locally on November 25, 2026. After an intentional failure at two committed 1,000-row batches, the database contained 2,000 transactions and 29 synthetic risk flags. Restarting without injection inserted the remaining 8,000, resulting in 10,000 transactions and 161 synthetic risk flags. Kafka/Spark process termination, checkpoint recovery, delayed events and DLQ tests remain future Phase 5 work.
 
 ## Goal
 
