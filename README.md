@@ -4,7 +4,7 @@
 
 ## Why this project
 
-Demonstrate event-driven data engineering beyond traditional batch ETL: reproducible high-volume transaction generation, explainable risk signals, schema enforcement, quarantine, and replay-safe processing. Later phases will implement real Kafka ingestion, event-time Spark streaming, fault recovery, and analytics sinks.
+Demonstrate event-driven data engineering beyond traditional batch ETL: reproducible high-volume transaction generation, explainable risk signals, schema enforcement, quarantine, and replay-safe processing. Kafka ingestion, Spark streaming, and local PostgreSQL analytics are implemented and tested; upcoming work covers controlled failures, late data, and monitoring.
 
 ## Target architecture
 
@@ -92,7 +92,7 @@ The local macOS Docker deployment was exercised with Apache Kafka 4.1.1. The use
 
 ## Phase 3: Spark Structured Streaming
 
-The new [Spark + Kafka setup guide](docs/PHASE3_SPARK.md) describes Spark 3.5.6, its matching Kafka connector, event-time deduplication and console window updates. Code is committed but **no Spark execution result has been verified yet**.
+The [Spark + Kafka setup guide](docs/PHASE3_SPARK.md) describes Spark 3.5.6, its matching Kafka connector, event-time deduplication and console window updates. **The local streaming run has been verified**, as documented below.
 
 ## Verified Phase 3 PySpark results (November 24, 2026)
 
@@ -110,7 +110,7 @@ The local Spark run emitted informational/warning log messages about network bin
 
 ## Phase 4: PostgreSQL analytics
 
-Phase 4 adds a local [PostgreSQL analytics setup guide](docs/PHASE4_POSTGRES.md), a Docker PostgreSQL service, an idempotent loader from Spark Parquet, transaction constraints/indexes, and daily/category KPI views. This stage is **committed but not yet executed on the user's Mac**; it is a batch/backfill sink, not continuous Spark-to-PostgreSQL streaming.
+Phase 4 adds a local [PostgreSQL analytics setup guide](docs/PHASE4_POSTGRES.md), a Docker PostgreSQL service, an idempotent loader from Spark Parquet, transaction constraints/indexes, and daily/category KPI views. The local load, replay and SQL views have been verified; this is a batch/backfill sink, not continuous Spark-to-PostgreSQL streaming.
 
 ## Verified Phase 4 PostgreSQL ingestion and replay (November 25, 2026)
 
@@ -132,6 +132,10 @@ This validates a **local replay-safe Parquet-to-PostgreSQL batch/backfill load**
 
 **Phase 4 SQL analytics:** The local PostgreSQL `daily_kpis` and `merchant_category_kpis` views were exercised: 10,000 transactions, 161 synthetic risk flags (1.61%), 291,841,656 cents total, and six reconciled merchant categories. The initial timezone grouping issue was subsequently corrected and verified against a new demo database.
 
+## Phase 5: Controlled failure and recovery
+
+[Phase 5 recovery test instructions](docs/PHASE5_RECOVERY.md) use a **separate PostgreSQL database**. The loader can deliberately throw a `SIMULATED_FAILURE_AFTER_COMMIT` exception after a configured number of successful transaction batches. Replaying the source should insert only missing events and preserve one row per event ID. Code and unit tests are committed; **the crash/recovery scenario has not yet been run locally**, and the Kafka/Spark failure, watermark/late-data and DLQ tests remain outstanding.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -140,7 +144,7 @@ This validates a **local replay-safe Parquet-to-PostgreSQL batch/backfill load**
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | Planned |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL post-commit fault-injection code ready; local verification pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
