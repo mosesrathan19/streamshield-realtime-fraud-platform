@@ -1,6 +1,6 @@
 # Phase 10C — Spark Structured Streaming Checkpoint Progress
 
-**Status:** Implemented in GitHub, awaiting tests and local browser verification.
+**Status:** Browser-verified on macOS November 25, 2026. The Streamlit Spark Checkpoints page displayed three existing checkpoints: Phase 3 accepted (4 offset logs, 4 commit logs, 4 committed batch IDs), 100K v2 accepted (2/2/2), and 1M v1 accepted (2/2/2), for 8 committed batch IDs total. The user has not yet provided confirmation of the Phase 10C unit test run.
 
 ## What is implemented
 
