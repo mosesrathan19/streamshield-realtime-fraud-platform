@@ -10,7 +10,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .spark_stream import KAFKA_PACKAGE, SPARK_VERSION, schema
+from streamshield.spark_stream import SPARK_VERSION, schema
 
 TOPIC = "streamshield.dlq_test.v1"
 
