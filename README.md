@@ -65,7 +65,7 @@ docker compose --profile dashboard up -d --build
 
 The service mounts `outputs/` **read-only** and is intended for local development. These checks **do not** measure consumer lag, live fraud alerts, or end-to-end latency. **Phase 9 locally verified on November 25, 2026:** Docker dashboard built and opened in the browser; Kafka and PostgreSQL showed reachable TCP endpoints, three benchmark reports showed Present, and the user confirmed the updated tests passed. See [launch and test instructions](docs/PHASE9_LOCAL_MONITORING.md).
 
-### 📡 Phase 10A — Kafka topic offset inspection (verification pending)
+### 📡 Phase 10A — Kafka topic offset inspection (locally verified)
 
 The Docker Streamlit dashboard now includes a **Kafka Topics** page showing existing `streamshield.*` topics, partitions, and earliest/latest retained offsets through a **read-only Kafka Admin API**. It does not join consumer groups, consume messages, or alter checkpoints. **Retained offset span is not consumer lag**, and it does not prove that Spark has caught up.
 
@@ -75,7 +75,7 @@ python -m unittest discover -s tests -v
 docker compose --profile dashboard up -d --build
 ```
 
-Open **http://localhost:8501 → Kafka Topics**. This phase is **not yet locally verified**. Details: [Phase 10A Kafka observability](docs/PHASE10_KAFKA_OBSERVABILITY.md).
+Open **http://localhost:8501 → Kafka Topics**. **Locally verified November 25, 2026:** user reported unit tests passed; browser showed 9 matching topics, 33 partitions, and a retained offset span of 1,210,412. This is a point-in-time offset range, not a message count or consumer lag. Details: [Phase 10A Kafka observability](docs/PHASE10_KAFKA_OBSERVABILITY.md).
 
 ### ✅ Reliability demonstrated
 
