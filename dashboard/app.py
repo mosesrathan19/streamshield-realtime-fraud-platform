@@ -15,6 +15,7 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data import benchmarks, postgres_snapshots, DEFAULT_DSN
+from health import dependency_checks, report_checks
 
 st.set_page_config(
     page_title="StreamShield | Streaming Analytics",
@@ -59,7 +60,7 @@ def read_benchmarks() -> list[dict]:
 with st.sidebar:
     st.markdown("## 🛡️ StreamShield")
     st.caption("STREAMING ANALYTICS · LOCAL DEV")
-    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "Pipeline Architecture"])
+    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Pipeline Architecture"])
     st.divider()
     st.markdown("**Data sources**")
     st.caption("PostgreSQL: historical backfill snapshot")
@@ -205,6 +206,27 @@ elif page == "Transactions & Risk":
 
 elif page == "Performance":
     show_performance(runs)
+
+elif page == "System Health":
+    st.subheader("Local component reachability")
+    st.caption("Point-in-time TCP checks. Reachable does not guarantee broker readiness, SQL query health, consumer-group progress, or end-to-end latency.")
+    dependencies = dependency_checks()
+    for item in dependencies:
+        status = "Reachable" if item["reachable"] else "Unreachable"
+        st.write(f'**{item["component"]}:** {status} · `{item["endpoint"]}`')
+    st.divider()
+    st.subheader("Saved benchmark report files")
+    files = report_checks()
+    if files:
+        st.dataframe(
+            pd.DataFrame([{"Run": x["run"], "Report": x["report"],
+                           "Status": "Present" if x["present"] else "Missing"}
+                          for x in files]),
+            hide_index=True, use_container_width=True,
+        )
+    else:
+        st.info("No benchmark report paths configured.")
+    st.info("No consumer-lag polling, live alert delivery, or continuous Spark driver inspection is implemented. Refresh manually to run these checks again.")
 
 else:
     st.subheader("Architecture and measurement boundaries")
