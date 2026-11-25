@@ -204,7 +204,7 @@ The first observed replay run used an existing database and therefore exercised 
 
 ## Phase 6B: Kafka -> Spark 100K benchmark (local execution pending)
 
-The [Phase 6 guide](docs/PHASE6_BENCHMARK.md) now documents an isolated 100,000-event Kafka producer and checkpointed Spark 3.5.6 Parquet benchmark. The source topic `streamshield.benchmark_100k.v1` has six partitions; the Spark pipeline reuses transaction validation, watermark/event-ID deduplication and illustrative risk flags from the primary job. It writes only to `outputs/spark_benchmark_100k`. A read-only verifier reconciles all 100,000 synthetic event IDs and all six partitions' Kafka offset ranges. Producer acknowledgement and Spark query timing are reported separately. **Code and tests have been committed, but no local Kafka/Spark benchmark values have yet been observed.**
+The [Phase 6 guide](docs/PHASE6_BENCHMARK.md) now documents an isolated 100,000-event Kafka producer and checkpointed Spark 3.5.6 Parquet benchmark. The source topic `streamshield.benchmark_100k.v1` has six partitions; the Spark pipeline reuses transaction validation, watermark/event-ID deduplication and illustrative risk flags from the primary job. It writes only to `outputs/spark_benchmark_100k`. A read-only verifier reconciles all 100,000 synthetic event IDs and all six partitions' Kafka offset ranges. Producer acknowledgement and Spark query timing are reported separately. **Code and tests have been committed, but Kafka → Spark data reconciliation verified; processing timing output still pending.**
 
 ## Roadmap for flagship portfolio completion
 
@@ -223,3 +223,10 @@ The [Phase 6 guide](docs/PHASE6_BENCHMARK.md) now documents an isolated 100,000-
 ## Safety and scope
 
 Educational synthetic project, not a production fraud system. Do not expose Kafka or databases directly to the internet. Use credentials and encryption for real deployments; local examples are intended for development only.
+
+## Verified Phase 6B Kafka → Spark 100K reconciliation (November 25, 2026)
+
+The independent read-only `stream_bench_verify` on the user's Apple Silicon Mac returned **PASS**: 100,000 persisted events; 100,000 unique event IDs; 0 invalid IDs; 100,000 reconciled Kafka offsets; no verifier errors. The six source partitions had counts **16,807 / 16,601 / 16,530 / 17,172 / 16,509 / 16,381**, each with contiguous offsets from 0 through `rows - 1` and no duplicate coordinates.
+
+**Performance measurement pending:** The user has not supplied the separate Spark benchmark JSON containing `spark_query_elapsed_seconds` and `persisted_events_per_query_second`. Do not infer Kafka/Spark throughput or event latency from the read-only reconciliation results.
+
