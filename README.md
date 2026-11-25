@@ -179,7 +179,7 @@ The [Phase 5D DLQ/quarantine guide](docs/PHASE5_DLQ.md) describes an isolated si
 
 ## Phase 5E: Isolated forced Spark driver crash (local validation pending)
 
-The [Phase 5E forced-crash runbook](docs/PHASE5_SPARK_FORCED_CRASH.md) now provides a guarded single-topic, 300-synthetic-event test. An isolated Spark driver processes Kafka in 50-record micro-batches using a dedicated Parquet sink and checkpoint, then deliberately calls `SIGKILL` on itself after observing completed micro-batches. Independent read-only verification checks partial persisted results and full recovery after restart with the same checkpoint. **Code and unit tests are committed, but the local crash and recovery have not yet been run.** This is driver SIGKILL recovery for a local Parquet sink; it does not prove JVM/broker failover or mid-transaction external-sink recovery.
+The [Phase 5E forced-crash runbook](docs/PHASE5_SPARK_FORCED_CRASH.md) now provides a guarded single-topic, 300-synthetic-event test. An isolated Spark driver processes Kafka in 50-record micro-batches using a dedicated Parquet sink and checkpoint, then deliberately calls `SIGKILL` on itself after observing completed micro-batches. Independent read-only verification checks partial persisted results and full recovery after restart with the same checkpoint. **Local partial-state and full checkpoint recovery verification passed on November 25, 2026**: after the deliberately interrupted driver run, the independent verifier found 100 persisted transactions with 100 unique event IDs and 100 unique Kafka offsets; after the recovery run it reported PASS with all 300 events, 300 unique IDs and all 300 offsets accounted for. A further no-op restart remains to be verified. This is driver SIGKILL recovery for a local Parquet sink; it does not prove JVM/broker failover or mid-transaction external-sink recovery.
 
 ## Roadmap for flagship portfolio completion
 
@@ -189,7 +189,7 @@ The [Phase 5E forced-crash runbook](docs/PHASE5_SPARK_FORCED_CRASH.md) now provi
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; watermark verified; isolated Parquet quarantine and replay verified; forced driver crash code awaiting local test; Kafka DLQ publication pending |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; watermark verified; isolated Parquet quarantine and replay verified; forced Spark driver crash and checkpoint recovery verified; final no-op replay and Kafka DLQ publication pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
