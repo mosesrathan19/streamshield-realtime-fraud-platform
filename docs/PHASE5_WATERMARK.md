@@ -1,6 +1,6 @@
 # Phase 5C — Isolated out-of-order and late-event test
 
-**Status: implemented; user runtime verification pending.**
+**Status: verified locally November 25, 2026.** The follow-up verifier reported `PASS` with four unique persisted event IDs: `wm_on_time`, `wm_outorder`, `wm_seed_1`, and `wm_seed_2`. It reported `late_event_absent=true`. This is evidence for the specific controlled ordering scenario, not generalized late-data correctness.
 
 The experiment deliberately avoids the existing 10,100-row Spark checkpoint and live transaction topic. It creates a **new single-partition Kafka topic** (`streamshield.watermark_test.v1`) and **new** Spark output and checkpoint directory (`outputs/spark_watermark_phase5`). Existing Kafka transactions, Parquet, and PostgreSQL data are untouched.
 
