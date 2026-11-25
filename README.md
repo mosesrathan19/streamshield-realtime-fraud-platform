@@ -238,3 +238,6 @@ After the 100K v1 Kafka/Spark Parquet benchmark passed independent ID/offset rec
 
 **Verified v2 Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_100k.v2`; 6 partitions; 100,000 attempted/acknowledged, 0 failed, 0 unflushed; measured producer duration **0.987 seconds** and acknowledged rate **101,282.7 events/sec**. This is publisher-side timing and does not measure Spark processing or end-to-end latency. The v2 Spark trial and independent reconciliation remain pending.
 
+
+**Verified v2 Spark data reconciliation (November 25, 2026):** Read-only verifier returned `PASS`, `total_events=100000`, `unique_event_ids=100000`, `invalid_event_ids=0`, and `reconciled_kafka_offsets=100000` with no errors. All six Kafka partitions had contiguous offset ranges and per-partition counts 16,807 / 16,601 / 16,530 / 17,172 / 16,509 / 16,381. The saved Spark processing-time JSON has not yet been supplied; no Spark throughput claim is made.
+
