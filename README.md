@@ -167,7 +167,7 @@ The local macOS Spark 3.5.6 streaming job restarted with the **existing** `outpu
 | New event IDs verified (10000–10099) | — | **100** |
 | Verifier status | PASS | **PASS** |
 
-This confirms a **graceful checkpoint-based restart followed by incremental processing without duplicate persisted event IDs** for this local test. A final no-new-message restart and forced interruption during a micro-batch remain untested; the result does not prove end-to-end exactly-once semantics or fault tolerance under forced process termination.
+This confirms a **graceful checkpoint-based restart followed by incremental processing without duplicate persisted event IDs** for this local test. A final no-new-message restart was also run and the read-only verifier reported **PASS**, unchanged at **10,100 rows, 10,100 unique IDs, 163 synthetic risk flags**, with the 100 new IDs verified. Forced interruption during a micro-batch remains untested; these results do not prove end-to-end exactly-once semantics or fault tolerance under forced process termination.
 
 ## Roadmap for flagship portfolio completion
 
@@ -177,7 +177,7 @@ This confirms a **graceful checkpoint-based restart followed by incremental proc
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and incremental Spark checkpoint restart verified; forced crashes, late data and DLQ pending |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and graceful Spark checkpoint replay verified; forced crashes, late data and DLQ pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
