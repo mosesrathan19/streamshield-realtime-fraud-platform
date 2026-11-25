@@ -48,9 +48,20 @@ def normalize_row(row) -> tuple:
     return tuple(event_ts if key == "event_ts" else data[key] for key in COLUMNS)
 
 
-def load(parquet_dir: str, dsn: str, batch_size: int = 1000) -> dict:
+def crash_after_commit(committed_batches: int, crash_after_batches: int) -> None:
+    """Deterministic fault injection strictly AFTER a successful DB commit."""
+    if crash_after_batches and committed_batches == crash_after_batches:
+        raise RuntimeError(
+            f"SIMULATED_FAILURE_AFTER_COMMIT: {committed_batches} committed batches"
+        )
+
+
+def load(parquet_dir: str, dsn: str, batch_size: int = 1000,
+         crash_after_batches: int = 0) -> dict:
     if batch_size < 1:
         raise ValueError("batch_size must be positive")
+    if crash_after_batches < 0:
+        raise ValueError("crash_after_batches cannot be negative")
     from pyspark.sql import SparkSession, functions as F
     import psycopg
 
@@ -69,6 +80,7 @@ def load(parquet_dir: str, dsn: str, batch_size: int = 1000) -> dict:
             raise ValueError("Parquet input has duplicate event_id values")
         schema_sql = (Path(__file__).resolve().parents[2] / "sql" / "001_schema.sql").read_text()
         inserted = 0
+        committed_batches = 0
         with psycopg.connect(dsn, autocommit=True) as con:
             with con.cursor() as cur:
                 cur.execute(schema_sql)
@@ -83,12 +95,16 @@ def load(parquet_dir: str, dsn: str, batch_size: int = 1000) -> dict:
                             # rowcount is the aggregate inserted count for executemany.
                             inserted += cur.rowcount
                     pending.clear()
+                    committed_batches += 1
+                    crash_after_commit(committed_batches, crash_after_batches)
                 # save batch independent of original Spark partition sizes
             if pending:
                 with con.transaction():
                     with con.cursor() as cur:
                         cur.executemany(INSERT_SQL, pending, returning=False)
                         inserted += cur.rowcount
+                committed_batches += 1
+                crash_after_commit(committed_batches, crash_after_batches)
             with con.cursor() as cur:
                 cur.execute("SELECT COUNT(*), COUNT(*) FILTER (WHERE risk_flag) FROM transactions")
                 total, total_alerts = cur.fetchone()
@@ -99,6 +115,7 @@ def load(parquet_dir: str, dsn: str, batch_size: int = 1000) -> dict:
             "source_unique_event_ids": source_unique,
             "source_synthetic_risk_flags": source_alerts,
             "newly_inserted": inserted,
+            "committed_batches": committed_batches,
             "database_total_transactions": total,
             "database_total_flagged": total_alerts,
             "database_daily_kpi_rows": days,
@@ -117,8 +134,10 @@ def main() -> None:
         "STREAMSHIELD_PG_DSN",
         "postgresql://streamshield:streamshield_dev_only@127.0.0.1:5433/streamshield"))
     p.add_argument("--batch-size", type=int, default=1000)
+    p.add_argument("--crash-after-batches", type=int, default=0,
+                   help="Phase 5 ONLY: simulate a failure AFTER N committed batches; 0 disables")
     a = p.parse_args()
-    load(a.parquet_dir, a.dsn, a.batch_size)
+    load(a.parquet_dir, a.dsn, a.batch_size, a.crash_after_batches)
 
 
 if __name__ == "__main__":
