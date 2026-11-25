@@ -1,6 +1,6 @@
 # Phase 9 — Optional Docker Dashboard and Local Health Diagnostics
 
-**Status:** Code and tests committed; Docker build, browser display, and health checks **not yet locally verified**.
+**Status:** Verified on macOS, November 25, 2026: Docker image built, Kafka and PostgreSQL healthy, Streamlit System Health page rendered in browser, both services reachable over TCP, all three saved benchmark reports present, and the local unit test suite passed (reported by the user).
 
 ## What was added
 
@@ -51,7 +51,7 @@ In this mode the health checks default to Kafka `127.0.0.1:9092` and PostgreSQL 
 python -m unittest discover -s tests -v
 ```
 
-This includes three new unit tests in `tests/test_dashboard_health.py`. The previous 37 tests were verified before Phase 9; do not claim the new total passed until the command runs on the local Mac.
+This includes three new unit tests in `tests/test_dashboard_health.py`. The previous 37 tests passed before Phase 9; three new health tests were added. The user confirmed the updated local test suite passed on November 25, 2026 (the exact count was not pasted).
 
 ## Troubleshooting
 
