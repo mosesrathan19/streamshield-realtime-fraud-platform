@@ -173,6 +173,10 @@ This confirms a **graceful checkpoint-based restart followed by incremental proc
 
 The [Phase 5C watermark experiment](docs/PHASE5_WATERMARK.md) was **verified locally on November 25, 2026**. It uses a separate one-partition Kafka topic, isolated Parquet sink and Spark checkpoint, and a two-stage fixture with a late event, a within-watermark out-of-order event, an on-time event, and a duplicate ID. The read-only verifier checks actual persisted IDs. The read-only follow-up verifier reported **PASS**, 4 persisted rows, 4 distinct event IDs, and `late_event_absent=true`, with IDs `wm_on_time`, `wm_outorder`, `wm_seed_1`, `wm_seed_2`. Thus the deliberately very late event was excluded, the within-watermark out-of-order event was retained, and a repeated seed ID had no duplicate persisted effect. This is one controlled watermark experiment, not comprehensive validation under all arrival schedules.
 
+## Phase 5D: Isolated malformed-event quarantine test (awaiting local verification)
+
+The [Phase 5D DLQ/quarantine guide](docs/PHASE5_DLQ.md) describes an isolated six-message Kafka fixture and separate Spark Parquet sinks: 2 valid transactions and 4 deliberately invalid records. The rejected sink stores the Kafka topic/partition/offset, optional event ID, and rejection reason **without retaining raw payloads**. A read-only verifier checks all six Kafka offsets are accounted for and that no invalid records enter the accepted output. The implementation and tests are committed, but **the user has not yet run this test locally**. This is a local Parquet quarantine/DLQ equivalent; the dedicated Kafka DLQ topic is not published to.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -181,7 +185,7 @@ The [Phase 5C watermark experiment](docs/PHASE5_WATERMARK.md) was **verified loc
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; watermark behavior verified, forced crashes and DLQ pending |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; watermark verified; isolated Parquet quarantine implementation ready; forced crashes and Kafka DLQ publication pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
