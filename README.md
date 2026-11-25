@@ -202,6 +202,10 @@ The [Phase 6 measurement guide](docs/PHASE6_BENCHMARK.md) starts with a **fresh 
 
 The first observed replay run used an existing database and therefore exercised duplicate rejection. The subsequent **fresh** trial used `outputs/phase6_fresh_100k_trial2.db` and inserted all 100,000 events, creating 1,608 synthetic risk alerts. These are single-run measurements, not repeat-trial percentiles or performance guarantees. Streaming-stage benchmarking remains pending.
 
+## Phase 6B: Kafka -> Spark 100K benchmark (local execution pending)
+
+The [Phase 6 guide](docs/PHASE6_BENCHMARK.md) now documents an isolated 100,000-event Kafka producer and checkpointed Spark 3.5.6 Parquet benchmark. The source topic `streamshield.benchmark_100k.v1` has six partitions; the Spark pipeline reuses transaction validation, watermark/event-ID deduplication and illustrative risk flags from the primary job. It writes only to `outputs/spark_benchmark_100k`. A read-only verifier reconciles all 100,000 synthetic event IDs and all six partitions' Kafka offset ranges. Producer acknowledgement and Spark query timing are reported separately. **Code and tests have been committed, but no local Kafka/Spark benchmark values have yet been observed.**
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
