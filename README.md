@@ -1,6 +1,72 @@
-# StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
+# 🛡️ StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
 
-> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming verified locally; Phase 4 PostgreSQL loading, replay protection, SQL analytics and UTC correction verified locally; monitoring and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
+**Kafka · PySpark Structured Streaming · PostgreSQL · Parquet · Docker · Streamlit · Python**
+
+A local end-to-end, **synthetic transaction streaming** portfolio project demonstrating Kafka ingestion, Spark event-time processing, data-quality quarantine, checkpoint recovery, replay-safe storage, SQL analytics and a browser-based dashboard. The saved benchmarks have been independently reconciled; this is a learning platform, **not a production fraud-classification system**.
+
+### 📸 Dashboard preview
+
+![StreamShield overview — PostgreSQL transaction KPIs and merchant activity](docs/screenshots/01-overview.jpg)
+
+<sub>Read-only Streamlit dashboard showing the **historical PostgreSQL demo snapshot**. The 100K and 1M benchmark datasets are separate and are **not** loaded into this PostgreSQL snapshot.</sub>
+
+### 🚀 Measured local streaming benchmarks
+
+| Verified metric | 100K events | 1M events |
+|---|---:|---:|
+| Kafka producer acknowledgements | 100,000 | 1,000,000 |
+| Producer publishing duration | 0.987 s | 5.398 s |
+| Kafka acknowledged rate | **101,282.7 events/s** | **185,241.2 events/s** |
+| Spark query + Parquet completion | 8.788 s | 19.433 s |
+| Spark persisted rate | **11,379.5 events/s** | **51,459.2 events/s** |
+| Synthetic risk flags | 1,609 | 16,084 |
+| Unique IDs / reconciled Kafka offsets | All | All |
+| Independent verification | **PASS** | **PASS** |
+
+The producer and Spark timings are **separate, sequential local measurements**. Spark timing includes `availableNow` query startup, processing, checkpointing and Parquet writes, but excludes SparkSession startup and post-run verification. These figures are **not end-to-end throughput, sustained production rates, or p95 latency**. See [benchmark methodology](docs/PHASE6_BENCHMARK.md) and [1M verification](docs/PHASE6_1M_SCALE.md).
+
+![StreamShield 100K versus 1M Kafka and Spark performance charts](docs/screenshots/02-performance.jpg)
+
+### 📊 Dashboard gallery
+
+| Transaction activity | Risk analysis |
+|---|---|
+| ![Historical UTC daily transactions and illustrative risk flags](docs/screenshots/03-daily-activity.jpg) | ![Synthetic risk rules and merchant category analysis](docs/screenshots/04-risk-breakdown.jpg) |
+
+<sub>The daily chart is a **single synthetic event date**, not a multi-day production trend. Risk flags reflect illustrative high-amount and synthetic-country rules, not real-world fraud detection accuracy.</sub>
+
+#### Pipeline architecture
+
+![StreamShield pipeline architecture displayed in the Streamlit app](docs/screenshots/05-pipeline-architecture.jpg)
+
+**Architecture note:** Kafka → Spark → checkpointed Parquet is implemented; PostgreSQL analytics are populated using a **separate replay-safe batch/backfill loader**, not an always-on Spark-to-PostgreSQL sink. Invalid messages in the Phase 5D demonstration are held in **Parquet quarantine**, not published to a Kafka DLQ topic. See [Phase 7 dashboard documentation](docs/PHASE7_DASHBOARD.md).
+
+### ▶️ Run the dashboard locally (macOS)
+
+```bash
+cd ~/Documents/streamshield-realtime-fraud-platform
+source .venv-spark/bin/activate
+python -m pip install -e '.[dashboard]'
+docker compose up -d
+streamlit run dashboard/app.py
+```
+
+Then visit **http://localhost:8501**. To stop the dashboard, use `Ctrl+C`; source data and checkpoints are preserved. See [full dashboard setup](docs/PHASE7_DASHBOARD.md). The dashboard reads saved benchmark JSON and existing PostgreSQL views; it does not launch streaming jobs or poll live broker lag.
+
+### ✅ Reliability demonstrated
+
+- **Event uniqueness:** 100K and 1M Kafka → Spark → Parquet outputs reconciled to unique event IDs and contiguous Kafka offsets on six partitions.
+- **Checkpoint recovery:** abrupt local Spark-driver interruption followed by checkpoint-based recovery to 300 unique synthetic events.
+- **Invalid event handling:** isolated two-accepted/four-quarantined test with one explicit rejection reason per invalid record; repeat run showed no duplicates.
+- **Event-time behavior:** isolated watermark fixture verified on-time, allowed out-of-order, too-late, and duplicate-event cases.
+- **PostgreSQL replay safety:** simulated post-commit failure recovered from 2K to 10K persisted transactions without duplicate rows.
+- **Tests:** 37 unit tests passed locally when the Streamlit dashboard was verified on November 25, 2026.
+
+This local demonstration does **not** establish production-grade exactly-once semantics across systems, live transaction risk scoring, multi-node failure tolerance, or automated alert delivery.
+
+---
+
+## Implementation notes and verification history
 
 ## Why this project
 
