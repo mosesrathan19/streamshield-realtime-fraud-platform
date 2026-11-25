@@ -194,3 +194,22 @@ On macOS 26.6.2, Apple Silicon arm64, Python 3.11.9, the user captured the saved
 
 Spark query timing includes the call to start the query, `availableNow` processing and checkpointed Parquet sink completion. It excludes Kafka producer time, SparkSession initialization, and post-run verification. Kafka producer and Spark were benchmarked sequentially as distinct stages; do not treat the rate comparison as an end-to-end simultaneous pipeline throughput measurement or p95 latency. This is a single local test; stability and larger-scale performance remain to be measured.
 
+
+## Verified Phase 6D 1M streaming benchmark results (November 25, 2026)
+
+The locally saved `outputs/spark_benchmark_1m_v1/benchmark_result.json` was inspected after the independent read-only Kafka offset and event-ID reconciliation returned **PASS**.
+
+| Metric | 100K v2 measured | 1M v1 measured |
+|---|---:|---:|
+| Events published / persisted | 100,000 / 100,000 | 1,000,000 / 1,000,000 |
+| Kafka producer elapsed | 0.987 s | **5.398 s** |
+| Acknowledged producer rate | 101,282.7 events/s | **185,241.2 events/s** |
+| Spark availableNow query elapsed | 8.788 s | **19.433 s** |
+| Spark persisted events/query second | 11,379.5 | **51,459.2** |
+| Synthetic illustrative risk flags | 1,609 | **16,084** |
+| Unique persisted event IDs | 100,000 | **1,000,000** |
+| Reconciled Kafka offsets | 100,000 | **1,000,000** |
+| Independent integrity check | PASS | **PASS** |
+
+Spark rate was **4.52×** higher in the 1M run, but these are two single runs at different workload sizes and not repeated steady-state throughput experiments. The Spark timing includes query start, `availableNow` processing, checkpointed Parquet completion; it excludes Kafka publishing, SparkSession startup and post-run verification. Producer and Spark figures represent separate measurement scopes, not end-to-end latency or a single concurrent throughput rate. These checks demonstrate local result completeness/uniqueness for this synthetic fixture; they do not imply exactly-once across external sinks.
+
