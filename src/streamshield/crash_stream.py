@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 from streamshield.crash_fixture import TOPIC, COUNT
-from streamshield.spark_stream import SPARK_VERSION, parsed_stream
+from streamshield.spark_stream import SPARK_VERSION, schema
 
 OUTPUT = "outputs/spark_crash_phase5"
 
@@ -39,8 +39,18 @@ def main():
     folder.mkdir(parents=True, exist_ok=True)
 
     # Never point this script at the primary topic or any existing Spark output.
-    source = parsed_stream(spark, args.brokers, TOPIC)
-    persisted = source.select("kafka_partition", "kafka_offset", "event_id")
+    source = (spark.readStream.format("kafka")
+              .option("kafka.bootstrap.servers", args.brokers)
+              .option("subscribe", TOPIC)
+              .option("startingOffsets", "earliest")
+              .option("maxOffsetsPerTrigger", 50)
+              .option("failOnDataLoss", "true")
+              .load())
+    persisted = (source.select(
+        F.col("partition").alias("kafka_partition"),
+        F.col("offset").alias("kafka_offset"),
+        F.from_json(F.col("value").cast("string"), schema()).alias("payload")
+    ).select("kafka_partition", "kafka_offset", F.col("payload.event_id").alias("event_id")))
     writer = (persisted.writeStream.format("parquet").outputMode("append")
               .option("path", str(folder / "accepted"))
               .option("checkpointLocation", str(folder / "checkpoints" / "accepted"))
