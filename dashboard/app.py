@@ -18,6 +18,7 @@ from data import benchmarks, postgres_snapshots, DEFAULT_DSN
 from health import dependency_checks, report_checks
 from kafka_observability import kafka_topic_offsets
 from kafka_groups import kafka_consumer_groups
+from spark_checkpoints import inspect_known_checkpoints
 
 st.set_page_config(
     page_title="StreamShield | Streaming Analytics",
@@ -62,7 +63,7 @@ def read_benchmarks() -> list[dict]:
 with st.sidebar:
     st.markdown("## 🛡️ StreamShield")
     st.caption("STREAMING ANALYTICS · LOCAL DEV")
-    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Consumer Groups", "Pipeline Architecture"])
+    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Consumer Groups", "Spark Checkpoints", "Pipeline Architecture"])
     st.divider()
     st.markdown("**Data sources**")
     st.caption("PostgreSQL: historical backfill snapshot")
@@ -279,6 +280,44 @@ elif page == "Consumer Groups":
         "Group lag here is latest Kafka offset minus committed group offset, only when "
         "that offset is within the retained broker range. It is not Spark checkpoint "
         "progress, processing latency, or proof that a pipeline is healthy."
+    )
+
+elif page == "Spark Checkpoints":
+    st.subheader("Spark checkpointed batch progress — saved local snapshots")
+    st.caption(
+        "Reads existing Spark offsets/ and commits/ log files from your saved runs. "
+        "This is NOT a live Spark status probe. Batch IDs with both logs are "
+        "reported as committed; source offsets are not accepted output counts."
+    )
+    try:
+        checkpoints = inspect_known_checkpoints()
+    except (OSError, ValueError, KeyError, TypeError, UnicodeError) as exc:
+        st.warning("Unable to inspect saved Spark checkpoint metadata.")
+        st.caption(f"{type(exc).__name__}: {exc}")
+    else:
+        overview = pd.DataFrame([
+            {"Run": x["name"],
+             "Checkpoint": "Present" if x["checkpoint_present"] else "Missing",
+             "Offsets log files": x["offset_log_files"],
+             "Commit log files": x["commit_log_files"],
+             "Committed batch IDs": x["committed_batches_total"]}
+            for x in checkpoints
+        ])
+        st.dataframe(overview, hide_index=True, use_container_width=True)
+        for x in checkpoints:
+            with st.expander(f'{x["name"]} — {x["committed_batches_total"]} committed batches'):
+                if not x["rows"]:
+                    st.info("No matching committed batch and source offset log files found.")
+                else:
+                    st.dataframe(pd.DataFrame(x["rows"]), hide_index=True,
+                                 use_container_width=True)
+                    if x["committed_batches_total"] > x["batches_shown"]:
+                        st.caption("Showing only the most recent saved batches.")
+    st.info(
+        "A committed Spark batch does not prove the Spark query is running now. "
+        "Source offset advances are not equivalent to persisted output rows after "
+        "filtering, watermarking, or deduplication. Historical inputRowsPerSecond, "
+        "processedRowsPerSecond and durationMs were not saved in these checkpoints."
     )
 
 elif page == "System Health":
