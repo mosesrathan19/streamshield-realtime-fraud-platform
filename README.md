@@ -233,11 +233,32 @@ The independent read-only `stream_bench_verify` on the user's Apple Silicon Mac 
 
 ## Phase 6C: Saved-timing streaming benchmark (v2, local run pending)
 
-After the 100K v1 Kafka/Spark Parquet benchmark passed independent ID/offset reconciliation, its original query elapsed time was unavailable. The v1 benchmark intentionally refuses a subsequent attempt to overwrite the existing Parquet output. A distinct [v2 benchmark trial](docs/PHASE6_BENCHMARK.md) is now implemented against `streamshield.benchmark_100k.v2` and `outputs/spark_benchmark_100k_v2`, with **automatic JSON persistence** of query duration and throughput at `outputs/spark_benchmark_100k_v2/benchmark_result.json`. No v2 runtime measurements are claimed until the local test passes.
+After the 100K v1 Kafka/Spark Parquet benchmark passed independent ID/offset reconciliation, its original query elapsed time was unavailable. The v1 benchmark intentionally refuses a subsequent attempt to overwrite the existing Parquet output. A distinct [v2 benchmark trial](docs/PHASE6_BENCHMARK.md) is now implemented against `streamshield.benchmark_100k.v2` and `outputs/spark_benchmark_100k_v2`, with **automatic JSON persistence** of query duration and throughput at `outputs/spark_benchmark_100k_v2/benchmark_result.json`. The v2 local trial passed and its measurements are recorded below.
 
 
-**Verified v2 Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_100k.v2`; 6 partitions; 100,000 attempted/acknowledged, 0 failed, 0 unflushed; measured producer duration **0.987 seconds** and acknowledged rate **101,282.7 events/sec**. This is publisher-side timing and does not measure Spark processing or end-to-end latency. The v2 Spark trial and independent reconciliation remain pending.
+**Verified v2 Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_100k.v2`; 6 partitions; 100,000 attempted/acknowledged, 0 failed, 0 unflushed; measured producer duration **0.987 seconds** and acknowledged rate **101,282.7 events/sec**. This is publisher-side timing and does not measure Spark processing or end-to-end latency. The v2 Spark trial and independent reconciliation passed; see the verified timing section.
 
 
-**Verified v2 Spark data reconciliation (November 25, 2026):** Read-only verifier returned `PASS`, `total_events=100000`, `unique_event_ids=100000`, `invalid_event_ids=0`, and `reconciled_kafka_offsets=100000` with no errors. All six Kafka partitions had contiguous offset ranges and per-partition counts 16,807 / 16,601 / 16,530 / 17,172 / 16,509 / 16,381. The saved Spark processing-time JSON has not yet been supplied; no Spark throughput claim is made.
+**Verified v2 Spark data reconciliation (November 25, 2026):** Read-only verifier returned `PASS`, `total_events=100000`, `unique_event_ids=100000`, `invalid_event_ids=0`, and `reconciled_kafka_offsets=100000` with no errors. All six Kafka partitions had contiguous offset ranges and per-partition counts 16,807 / 16,601 / 16,530 / 17,172 / 16,509 / 16,381. The saved v2 Spark processing-time JSON has now been supplied and its values appear in the verified timing section below.
+
+
+## Verified Phase 6C v2 100K streaming benchmark timing (November 25, 2026)
+
+On macOS 26.6.2, Apple Silicon arm64, Python 3.11.9, the user captured the saved `outputs/spark_benchmark_100k_v2/benchmark_result.json`:
+
+| Measurement | Result |
+|---|---:|
+| Source Kafka topic | `streamshield.benchmark_100k.v2` |
+| Source/accepted events | 100,000 / 100,000 |
+| Distinct accepted event IDs | 100,000 |
+| Kafka offsets reconciled by independent verifier | 100,000 (six partitions) |
+| Synthetic illustrative risk flags | 1,609 |
+| Kafka producer acknowledgements | 100,000 (0 failed, 0 unflushed) |
+| Kafka producer elapsed | **0.987 s** |
+| Kafka acknowledged producer rate | **101,282.7 events/s** |
+| Spark availableNow query elapsed | **8.788 s** |
+| Spark persisted rows/query second | **11,379.5 events/s** |
+| Independent reconciliation | **PASS** |
+
+Spark query timing includes the call to start the query, `availableNow` processing and checkpointed Parquet sink completion. It excludes Kafka producer time, SparkSession initialization, and post-run verification. Kafka producer and Spark were benchmarked sequentially as distinct stages; do not treat the rate comparison as an end-to-end simultaneous pipeline throughput measurement or p95 latency. This is a single local test; stability and larger-scale performance remain to be measured.
 
