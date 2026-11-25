@@ -128,6 +128,8 @@ A local macOS run loaded the previously verified Spark Parquet output into Postg
 
 This validates a **local replay-safe Parquet-to-PostgreSQL batch/backfill load** using `ON CONFLICT (event_id) DO NOTHING`. It does not yet verify continuous streaming writes, recovery from injected database failure, or payload-conflict detection. SQL view output still awaits explicit local inspection.
 
+**Date discrepancy under correction (November 25):** The initial daily KPI view reported `2025-12-31` despite synthetic event timestamps beginning at `2026-01-01T00:00:00Z`. This was caused by treating a local-time Python timestamp as UTC. The loader now reconstructs timestamps from Spark epoch microseconds and has a regression test. **A clean-database rerun is pending**, so the initial daily grouping is not yet accepted as final. See [Phase 4 UTC verification steps](docs/PHASE4_POSTGRES.md).
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
