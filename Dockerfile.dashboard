@@ -1,0 +1,11 @@
+# Phase 9: optional read-only Streamlit dashboard service.
+# Spark runs remain host-driven; this image contains no Kafka consumer or Spark job.
+FROM python:3.11-slim
+WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+RUN pip install --no-cache-dir '.[dashboard]'
+COPY dashboard/ ./dashboard/
+EXPOSE 8501
+CMD ["streamlit", "run", "dashboard/app.py", "--server.address=0.0.0.0", "--server.port=8501", "--server.headless=true"]
