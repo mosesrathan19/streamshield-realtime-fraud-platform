@@ -114,6 +114,12 @@ Expected: `status=PASS`, `total_events=100000`, `unique_event_ids=100000`, `inva
 
 **Repeat trials:** Use a distinct new topic name and distinct output directory in the code for each fresh run; the published v1 benchmark is intentionally one-shot to prevent accidental dataset reuse and corrupted throughput claims.
 
+## Verified Phase 6B Kafka → Spark 100K reconciliation (November 25, 2026)
+
+The independent read-only `stream_bench_verify` on the user's Apple Silicon Mac returned **PASS**: 100,000 persisted events; 100,000 unique event IDs; 0 invalid IDs; 100,000 reconciled Kafka offsets; no verifier errors. The six source partitions had counts **16,807 / 16,601 / 16,530 / 17,172 / 16,509 / 16,381**, each with contiguous offsets from 0 through `rows - 1` and no duplicate coordinates.
+
+**Performance measurement pending:** The user has not supplied the separate Spark benchmark JSON containing `spark_query_elapsed_seconds` and `persisted_events_per_query_second`. Do not infer Kafka/Spark throughput or event latency from the read-only reconciliation results.
+
 ## Publishing guidelines
 
 Report OS, Python version, available resources, event count, reproducibility seed, command, raw output, timestamp, warm-up policy, and whether the measured duration includes fixture creation. Don't compare dissimilar measurement scopes as if they represent the same throughput.
