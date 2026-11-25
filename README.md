@@ -149,7 +149,7 @@ A local macOS test injected an intentional failure **after two committed batches
 | Total risk flags after recovery | 161 |
 | Distinct source event IDs | 10,000 |
 
-The loader raised the expected `SIMULATED_FAILURE_AFTER_COMMIT` error; rerunning it without injection restored the full dataset. This verifies a **manual retry of an idempotent PostgreSQL batch/backfill sink** after a post-commit failure; it does not yet demonstrate Kafka broker failure, Spark checkpoint recovery, late-arriving events, automatic restart, or end-to-end exactly-once delivery. An additional no-op replay can further confirm zero newly inserted rows.
+The loader raised the expected `SIMULATED_FAILURE_AFTER_COMMIT` error; rerunning it without injection restored the full dataset. This verifies a **manual retry of an idempotent PostgreSQL batch/backfill sink** after a post-commit failure; it does not yet demonstrate Kafka broker failure, Spark checkpoint recovery, late-arriving events, automatic restart, or end-to-end exactly-once delivery. The user reported that the additional identical replay passed, completing the PostgreSQL idempotent recovery check.
 
 ## Roadmap for flagship portfolio completion
 
