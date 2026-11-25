@@ -83,11 +83,11 @@ A new **Consumer Groups** Streamlit page reads existing Kafka group commits with
 
 Launch with `docker compose --profile dashboard up -d --build` after `git pull` and the unit tests. See [Phase 10B guide](docs/PHASE10B_CONSUMER_LAG.md). **Locally verified November 25, 2026:** browser showed 2 groups inspected, 12 partitions with committed offsets, and a combined comparable Kafka group lag of 200. These are point-in-time values, not Spark checkpoint progress.
 
-### ⚙️ Phase 10C — Spark saved checkpoint progress (local verification pending)
+### ⚙️ Phase 10C — Spark saved checkpoint progress (browser verified)
 
 The **Spark Checkpoints** dashboard page reads existing Spark `offsets/` and `commits/` files **without writing or restarting any job**. It shows persisted committed batch IDs, source end offsets and differences between comparable saved batches for the 10K, 100K and 1M accepted-stream checkpoints. **Checkpoint offsets are not accepted record counts**, and a historical committed batch is **not evidence of an active Spark stream**. Per-microbatch processing rates and latency were not saved in these older runs and are therefore not displayed.
 
-After pulling, run the tests and restart the optional dashboard container; select **Spark Checkpoints** at `http://localhost:8501`. This phase awaits local confirmation. See [Phase 10C verification guide](docs/PHASE10C_SPARK_CHECKPOINTS.md).
+After pulling, run the tests and restart the optional dashboard container; select **Spark Checkpoints** at `http://localhost:8501`. **Browser verified November 25, 2026:** three saved checkpoints present, with 4, 2, and 2 committed batch IDs respectively. The five added unit tests still require confirmation. See [Phase 10C verification guide](docs/PHASE10C_SPARK_CHECKPOINTS.md).
 
 ### ✅ Reliability demonstrated
 
