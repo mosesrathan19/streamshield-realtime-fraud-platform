@@ -91,3 +91,6 @@ Expected after a fully successful 1M test: `status=PASS`, `total_events=1000000`
 ## Interpretation and limitations
 
 The validated 100K v2 comparison baseline is **101,282.7 acknowledged events/sec** from the Kafka producer, and **11,379.5 persisted events/sec** over an **8.788s** Spark query interval; these are **separate stage timings** from a single macOS test. Compare 1M to these scoped measurements without treating either rate as steady-state or end-to-end latency. The 1M test is an educational, local, one-node benchmark: it doesn't assess p50/p95/p99 latency, production cluster scaling, memory/CPU utilization, or broker failure scenarios.
+
+**Observed 1M Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_1m.v1`, 6 partitions; attempted **1,000,000**, acknowledged **1,000,000**, failed **0**, unflushed **0**; elapsed **5.398 s**, acknowledged producer throughput **185,241.2 events/sec**; host free space before publishing **26.53 GiB**. The producer saved a local `outputs/spark_benchmark_1m_v1/producer_result.json` file. Spark processing, final Parquet reconciliation, and related throughput remain **pending local verification**. Producer throughput is a separate stage measurement, not end-to-end streaming throughput.
+
