@@ -1,6 +1,6 @@
 # Phase 4 — PostgreSQL analytics (local macOS)
 
-**Status:** Docker configuration, SQL schema and loader committed. Actual PostgreSQL ingestion awaits local verification.
+**Status:** Initial load, identical replay, and SQL KPI queries verified locally on November 25, 2026 (10,000 transactions; 161 synthetic risk flags). The initial SQL daily view revealed a UTC date conversion bug; code has been corrected, but a clean-database rerun is still pending.
 
 ## Architecture / scope
 
@@ -49,6 +49,22 @@ docker exec streamshield-postgres psql -U streamshield -d streamshield -c "SELEC
 docker exec streamshield-postgres psql -U streamshield -d streamshield -c "SELECT * FROM daily_kpis ORDER BY event_day_utc;"
 docker exec streamshield-postgres psql -U streamshield -d streamshield -c "SELECT * FROM merchant_category_kpis ORDER BY flagged_transactions DESC;"
 ```
+
+## UTC timestamp correction — verify on a fresh demo database
+
+The original first-run SQL output showed `2025-12-31` for events generated starting `2026-01-01T00:00:00+00:00`. The Parquet-to-Python conversion inherited the Mac's local Pacific timezone, and the old loader incorrectly attached UTC to the local wall clock. The loader now uses `unix_micros(event_ts)` calculated in Spark to reconstruct the UTC instant. **Identical replay into the existing database cannot repair old timestamps** because `ON CONFLICT DO NOTHING` correctly leaves existing records unchanged.
+
+After `git pull`, run this **safe clean-database verification** (it creates a *second* database; it does not delete or modify the original):
+
+```bash
+docker exec streamshield-postgres createdb -U streamshield -O streamshield streamshield_utc
+python -m streamshield.postgres_load \
+  --parquet-dir outputs/spark_phase3/accepted \
+  --dsn 'postgresql://streamshield:streamshield_dev_only@127.0.0.1:5433/streamshield_utc'
+docker exec streamshield-postgres psql -U streamshield -d streamshield_utc -c "SELECT * FROM daily_kpis ORDER BY event_day_utc;"
+```
+
+The synthetic generator starts January 1, 2026 UTC; with 10,000 events spaced 30ms apart, the correct daily date is `2026-01-01`. The expected sum is 10,000 transactions and 161 flags. If the database already exists because you retried this procedure, skip the `createdb` line. Avoid running `dropdb` without explicitly reviewing the target.
 
 ## Data model
 
