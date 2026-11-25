@@ -63,9 +63,56 @@ Environment: macOS 26.6.2 build 25G83, Apple Silicon (`arm64`), Python 3.11.9.
 
 The initial run reused `outputs/phase6_baseline_100k.db` and measured replay/duplicate handling; it is **not** a fresh-ingestion benchmark. The second run used the new `outputs/phase6_fresh_100k_trial2.db` and measured fresh insertion. Both are local JSONL-to-SQLite tests, exclude Kafka/Spark and exclude synthetic generation from the reported processing throughput. No streaming latency percentile is available.
 
-## Stage 2 — Streaming benchmark (pending implementation)
+## Stage 2 — Kafka -> Spark -> Parquet 100K benchmark (implementation ready; local results pending)
 
-Will use an isolated Kafka topic and fresh Spark checkpoint/output, separate from the verified main 10,100-row dataset. We'll measure Kafka producer acknowledgement rate, Spark ingestion/reconciliation, and system resources. A total-run-time measurement is not equivalent to per-event p95 latency. Progressively increase counts after the small test is verified.
+This is a **separate** six-partition Kafka input topic `streamshield.benchmark_100k.v1`. It generates 100,000 deterministic synthetic transactions starting from event index 500000 and uses `outputs/spark_benchmark_100k/` for fresh Spark checkpoints and Parquet. It does **not** modify the main 10,100-event dataset, the main topic, previous test topics, or PostgreSQL. The fixture refuses to republish into a nonempty topic, and the Spark benchmark refuses to overwrite existing benchmark outputs. Do not manually delete/checkpoint-reset to make a rerun appear fresh.
+
+**Step A — Prerequisites and tests:**
+
+```bash
+cd ~/Documents/streamshield-realtime-fraud-platform
+git pull
+source .venv-spark/bin/activate
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+export PATH="$JAVA_HOME/bin:$PATH"
+python -m unittest discover -s tests -v
+docker compose ps
+```
+
+Kafka must be healthy. If tests fail, stop.
+
+**Step B — Publish exactly 100K records once:**
+
+```bash
+python -m streamshield.stream_bench_fixture
+```
+
+Expected (not guaranteed): `attempted=100000`, `acknowledged=100000`, `failed=0`, `unflushed=0`, `partitions=6`. Record producer elapsed seconds and acknowledged records/sec. This timing includes JSON serialization, publishing and delivery confirmation but excludes Kafka topic creation/preflight. Do not rerun the fixture after a successful publish.
+
+**Step C — Process the source through the real Spark pipeline's validation, 10-minute watermark, event-ID deduplication and risk rules, writing checkpointed Parquet:**
+
+```bash
+spark-submit \
+  --master 'local[2]' \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.6 \
+  src/streamshield/stream_bench_spark.py
+```
+
+The resulting `spark_query_elapsed_seconds` measures **query startup, availableNow micro-batch processing and checkpointed Parquet completion**. It excludes SparkSession startup, Kafka publishing and the post-run aggregation. The `persisted_events_per_query_second` is the aggregate processing rate for that scope, **not** end-to-end throughput or per-event p95 latency.
+
+If Spark fails or the count differs from 100K, do **not** delete output/checkpoints or rerun the fresh benchmark blindly: inspect log output first.
+
+**Step D — Independent reconciliation:**
+
+```bash
+python -m streamshield.stream_bench_verify
+```
+
+Expected: `status=PASS`, `total_events=100000`, `unique_event_ids=100000`, `invalid_event_ids=0`, `reconciled_kafka_offsets=100000`. The verifier checks the six Kafka partition offset ranges are contiguous from zero and that all expected event IDs are present exactly once. It reads only the isolated Parquet output.
+
+**Operational notes:** Spark may emit innocuous `NativeCodeLoader` or hostname binding warnings, as in earlier tests. However, an `ERROR`, failed query, unexpected counts or `FAIL` from the verifier require investigation, not a fabricated success. Memory, CPU, p50/p95/p99 latency and lag are not measured by these initial scripts. Publish results only after receiving the actual macOS console JSON.
+
+**Repeat trials:** Use a distinct new topic name and distinct output directory in the code for each fresh run; the published v1 benchmark is intentionally one-shot to prevent accidental dataset reuse and corrupted throughput claims.
 
 ## Publishing guidelines
 
