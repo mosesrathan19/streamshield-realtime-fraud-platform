@@ -262,3 +262,8 @@ On macOS 26.6.2, Apple Silicon arm64, Python 3.11.9, the user captured the saved
 
 Spark query timing includes the call to start the query, `availableNow` processing and checkpointed Parquet sink completion. It excludes Kafka producer time, SparkSession initialization, and post-run verification. Kafka producer and Spark were benchmarked sequentially as distinct stages; do not treat the rate comparison as an end-to-end simultaneous pipeline throughput measurement or p95 latency. This is a single local test; stability and larger-scale performance remain to be measured.
 
+
+## Phase 6D: 1M-event isolated streaming scale test (local run pending)
+
+The [1M Kafka → Spark benchmark runbook](docs/PHASE6_1M_SCALE.md) adds a guarded one-time synthetic fixture (six Kafka partitions, `streamshield.benchmark_1m.v1`) and the existing Spark enrichment pipeline writing to `outputs/spark_benchmark_1m_v1`. The job automatically saves producer and Spark query duration/throughput JSON reports, with an independent Kafka-offset and event-ID verifier. The producer has a minimum 5 GiB *host* free-space preflight; Docker VM storage and memory also need checking. **No 1M run or performance measurements have been verified yet.** The completed 100K trial remains untouched.
+
