@@ -165,11 +165,32 @@ python -m streamshield.stream_bench_verify --trial v2
 
 Do not run the publisher twice or erase existing outputs. If the Spark job fails partway through, **do not rerun the fresh benchmark without inspection**. Report the error first. The `spark_query_elapsed_seconds` is the Spark query's aggregate runtime and does not provide per-event p95/p99 latency or separate producer-to-consumer wall-clock timing.
 
-**Verified v2 Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_100k.v2`; 6 partitions; 100,000 attempted/acknowledged, 0 failed, 0 unflushed; measured producer duration **0.987 seconds** and acknowledged rate **101,282.7 events/sec**. This is publisher-side timing and does not measure Spark processing or end-to-end latency. The v2 Spark trial and independent reconciliation remain pending.
+**Verified v2 Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_100k.v2`; 6 partitions; 100,000 attempted/acknowledged, 0 failed, 0 unflushed; measured producer duration **0.987 seconds** and acknowledged rate **101,282.7 events/sec**. This is publisher-side timing and does not measure Spark processing or end-to-end latency. The v2 Spark trial and independent reconciliation passed; see the verified timing section.
 
 ## Publishing guidelines
 
 Report OS, Python version, available resources, event count, reproducibility seed, command, raw output, timestamp, warm-up policy, and whether the measured duration includes fixture creation. Don't compare dissimilar measurement scopes as if they represent the same throughput.
 
-**Verified v2 Spark data reconciliation (November 25, 2026):** Read-only verifier returned `PASS`, `total_events=100000`, `unique_event_ids=100000`, `invalid_event_ids=0`, and `reconciled_kafka_offsets=100000` with no errors. All six Kafka partitions had contiguous offset ranges and per-partition counts 16,807 / 16,601 / 16,530 / 17,172 / 16,509 / 16,381. The saved Spark processing-time JSON has not yet been supplied; no Spark throughput claim is made.
+**Verified v2 Spark data reconciliation (November 25, 2026):** Read-only verifier returned `PASS`, `total_events=100000`, `unique_event_ids=100000`, `invalid_event_ids=0`, and `reconciled_kafka_offsets=100000` with no errors. All six Kafka partitions had contiguous offset ranges and per-partition counts 16,807 / 16,601 / 16,530 / 17,172 / 16,509 / 16,381. The saved v2 Spark processing-time JSON has now been supplied and its values appear in the verified timing section below.
+
+
+## Verified Phase 6C v2 100K streaming benchmark timing (November 25, 2026)
+
+On macOS 26.6.2, Apple Silicon arm64, Python 3.11.9, the user captured the saved `outputs/spark_benchmark_100k_v2/benchmark_result.json`:
+
+| Measurement | Result |
+|---|---:|
+| Source Kafka topic | `streamshield.benchmark_100k.v2` |
+| Source/accepted events | 100,000 / 100,000 |
+| Distinct accepted event IDs | 100,000 |
+| Kafka offsets reconciled by independent verifier | 100,000 (six partitions) |
+| Synthetic illustrative risk flags | 1,609 |
+| Kafka producer acknowledgements | 100,000 (0 failed, 0 unflushed) |
+| Kafka producer elapsed | **0.987 s** |
+| Kafka acknowledged producer rate | **101,282.7 events/s** |
+| Spark availableNow query elapsed | **8.788 s** |
+| Spark persisted rows/query second | **11,379.5 events/s** |
+| Independent reconciliation | **PASS** |
+
+Spark query timing includes the call to start the query, `availableNow` processing and checkpointed Parquet sink completion. It excludes Kafka producer time, SparkSession initialization, and post-run verification. Kafka producer and Spark were benchmarked sequentially as distinct stages; do not treat the rate comparison as an end-to-end simultaneous pipeline throughput measurement or p95 latency. This is a single local test; stability and larger-scale performance remain to be measured.
 
