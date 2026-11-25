@@ -165,6 +165,8 @@ python -m streamshield.stream_bench_verify --trial v2
 
 Do not run the publisher twice or erase existing outputs. If the Spark job fails partway through, **do not rerun the fresh benchmark without inspection**. Report the error first. The `spark_query_elapsed_seconds` is the Spark query's aggregate runtime and does not provide per-event p95/p99 latency or separate producer-to-consumer wall-clock timing.
 
+**Verified v2 Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_100k.v2`; 6 partitions; 100,000 attempted/acknowledged, 0 failed, 0 unflushed; measured producer duration **0.987 seconds** and acknowledged rate **101,282.7 events/sec**. This is publisher-side timing and does not measure Spark processing or end-to-end latency. The v2 Spark trial and independent reconciliation remain pending.
+
 ## Publishing guidelines
 
 Report OS, Python version, available resources, event count, reproducibility seed, command, raw output, timestamp, warm-up policy, and whether the measured duration includes fixture creation. Don't compare dissimilar measurement scopes as if they represent the same throughput.
