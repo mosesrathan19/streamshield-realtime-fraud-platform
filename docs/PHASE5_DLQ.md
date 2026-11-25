@@ -1,6 +1,6 @@
 # Phase 5D — Malformed event quarantine / Dead-Letter Queue demonstration
 
-**Status: code committed; runtime test on Mac pending.**
+**Status: initial local runtime verification PASSED on November 25, 2026; no-new-message checkpoint replay remains pending.** The verifier showed 6 total messages, 2 accepted, 4 rejected and 6 reconciled Kafka offsets. Rejection reasons: `invalid_amount` (1), `invalid_event_time` (1), `missing_account_id` (1), `missing_or_malformed_event_id` (1).
 
 ## Architecture / isolation
 
