@@ -38,11 +38,11 @@ def schema():
     ])
 
 
-def parsed_stream(spark, brokers: str):
+def parsed_stream(spark, brokers: str, topic: str = TOPIC):
     from pyspark.sql import functions as F
     kafka = (spark.readStream.format("kafka")
              .option("kafka.bootstrap.servers", brokers)
-             .option("subscribe", TOPIC)
+             .option("subscribe", topic)
              .option("startingOffsets", "earliest")
              .option("failOnDataLoss", "true")
              .load())
@@ -69,9 +69,10 @@ def parsed_stream(spark, brokers: str):
             .filter(F.col("event_ts").isNotNull()))
 
 
-def enriched_stream(spark, brokers: str, watermark: str = "10 minutes"):
+def enriched_stream(spark, brokers: str, watermark: str = "10 minutes",
+                    topic: str = TOPIC):
     from pyspark.sql import functions as F
-    accepted = (parsed_stream(spark, brokers)
+    accepted = (parsed_stream(spark, brokers, topic)
                 .withWatermark("event_ts", watermark)
                 .dropDuplicatesWithinWatermark(["event_id"]))
     return accepted.withColumn(
@@ -83,7 +84,8 @@ def enriched_stream(spark, brokers: str, watermark: str = "10 minutes"):
     )
 
 
-def run(brokers: str, output_dir: str, spark_master: str, watermark: str):
+def run(brokers: str, output_dir: str, spark_master: str, watermark: str,
+        topic: str = TOPIC, skip_windows: bool = False):
     from pyspark.sql import SparkSession, functions as F
     spark = (SparkSession.builder.master(spark_master)
              .appName("StreamShieldStructuredStreaming")
@@ -95,7 +97,7 @@ def run(brokers: str, output_dir: str, spark_master: str, watermark: str):
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     try:
-        accepted = enriched_stream(spark, brokers, watermark)
+        accepted = enriched_stream(spark, brokers, watermark, topic)
         # Built-in Parquet sink with durable checkpoint. Use a fresh checkpoint
         # when changing source/query logic. Do not erase checkpoints during replay.
         saved = (accepted.writeStream.format("parquet")
@@ -103,21 +105,25 @@ def run(brokers: str, output_dir: str, spark_master: str, watermark: str):
                  .option("path", str((output / "accepted").resolve()))
                  .option("checkpointLocation", str((output / "checkpoints" / "accepted").resolve()))
                  .trigger(availableNow=True).start())
-        # Independent event-time window summary. Uses its own deduplication state.
-        windows = (enriched_stream(spark, brokers, watermark)
-                   .groupBy(F.window("event_ts", "1 minute"), F.col("risk_flag"))
-                   .agg(F.count("*").alias("transactions")))
-        visible = (windows.writeStream.format("console")
-                   .outputMode("update")
-                   .option("truncate", "false")
-                   .option("numRows", 100)
-                   .option("checkpointLocation", str((output / "checkpoints" / "windows").resolve()))
-                   .trigger(availableNow=True).start())
+        # For isolated watermark tests, only the persisted Parquet query runs.
+        # This avoids creating unrelated console-query checkpoints.
+        visible = None
+        if not skip_windows:
+            windows = (enriched_stream(spark, brokers, watermark, topic)
+                       .groupBy(F.window("event_ts", "1 minute"), F.col("risk_flag"))
+                       .agg(F.count("*").alias("transactions")))
+            visible = (windows.writeStream.format("console")
+                       .outputMode("update")
+                       .option("truncate", "false")
+                       .option("numRows", 100)
+                       .option("checkpointLocation", str((output / "checkpoints" / "windows").resolve()))
+                       .trigger(availableNow=True).start())
         saved.awaitTermination()
-        visible.awaitTermination()
+        if visible is not None:
+            visible.awaitTermination()
         if saved.exception() is not None:
             raise RuntimeError(str(saved.exception()))
-        if visible.exception() is not None:
+        if visible is not None and visible.exception() is not None:
             raise RuntimeError(str(visible.exception()))
         # Read the persisted accepted stream and print verifiable final metrics.
         df = spark.read.parquet(str((output / "accepted").resolve()))
@@ -129,7 +135,7 @@ def run(brokers: str, output_dir: str, spark_master: str, watermark: str):
         print({"persisted_events": result["persisted_events"],
                "distinct_event_ids": result["distinct_event_ids"],
                "synthetic_alerts": result["synthetic_alerts"],
-               "source_topic": TOPIC, "watermark": watermark,
+               "source_topic": topic, "watermark": watermark,
                "output": str(output.resolve())})
     finally:
         spark.stop()
@@ -141,8 +147,13 @@ def main():
     parser.add_argument("--output-dir", default="outputs/spark_phase3")
     parser.add_argument("--master", default="local[2]")
     parser.add_argument("--watermark", default="10 minutes")
+    parser.add_argument("--topic", default=TOPIC,
+                        help="Kafka source topic; use a fresh checkpoint when changing topic")
+    parser.add_argument("--skip-windows", action="store_true",
+                        help="Run only Parquet sink; useful for isolated watermark tests")
     args = parser.parse_args()
-    run(args.brokers, args.output_dir, args.master, args.watermark)
+    run(args.brokers, args.output_dir, args.master, args.watermark,
+        args.topic, args.skip_windows)
 
 
 if __name__ == "__main__":
