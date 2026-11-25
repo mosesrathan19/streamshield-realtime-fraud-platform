@@ -151,6 +151,10 @@ A local macOS test injected an intentional failure **after two committed batches
 
 The loader raised the expected `SIMULATED_FAILURE_AFTER_COMMIT` error; rerunning it without injection restored the full dataset. This verifies a **manual retry of an idempotent PostgreSQL batch/backfill sink** after a post-commit failure; it does not yet demonstrate Kafka broker failure, Spark checkpoint recovery, late-arriving events, automatic restart, or end-to-end exactly-once delivery. The user reported that the additional identical replay passed, completing the PostgreSQL idempotent recovery check.
 
+## Phase 5B: Spark checkpoint restart verification
+
+A [non-destructive Spark checkpoint restart test](docs/PHASE5_SPARK_CHECKPOINT.md) has been added, including a read-only verifier and unit tests. It checks the existing 10,000-event baseline, graceful Spark restart with the same checkpoints, ingestion of 100 new Kafka events, then repeated restart without duplicate persisted output. **This portion is coded but has not yet been run locally.** It does not test a forced process crash or distributed fault recovery.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -159,7 +163,7 @@ The loader raised the expected `SIMULATED_FAILURE_AFTER_COMMIT` error; rerunning
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery verified; Kafka/Spark recovery, late data and DLQ pending |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery verified; Spark restart test ready; forced crashes, late data and DLQ pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
