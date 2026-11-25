@@ -8,7 +8,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 COLUMNS = (
@@ -28,13 +28,14 @@ def normalize_row(row) -> tuple:
     missing = [key for key in COLUMNS if data.get(key) is None]
     if missing:
         raise ValueError("missing required fields: " + ",".join(missing))
-    event_ts = data["event_ts"]
-    if not isinstance(event_ts, datetime):
-        raise ValueError("event_ts must be datetime")
-    if event_ts.tzinfo is None:
-        event_ts = event_ts.replace(tzinfo=timezone.utc)
-    else:
-        event_ts = event_ts.astimezone(timezone.utc)
+    # Spark serializes timestamps to Python using the host timezone.
+    # Do not attach UTC to that naive datetime: on macOS/Pacific this shifts
+    # Jan 1 midnight UTC back to Dec 31 and corrupts day-level reporting.
+    # Derive the true UTC instant from Spark's timezone-independent epoch.
+    epoch_us = data.get("event_ts_epoch_us")
+    if type(epoch_us) is not int:
+        raise ValueError("event_ts_epoch_us must be a Spark-derived integer")
+    event_ts = datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(microseconds=epoch_us)
     if type(data["amount_cents"]) is not int or data["amount_cents"] <= 0:
         raise ValueError("amount_cents must be a positive integer")
     for key in ("risk_high_amount", "risk_synthetic_country", "risk_flag"):
@@ -59,7 +60,8 @@ def load(parquet_dir: str, dsn: str, batch_size: int = 1000) -> dict:
              .getOrCreate())
     spark.sparkContext.setLogLevel("WARN")
     try:
-        source = spark.read.parquet(parquet_dir).select(*COLUMNS)
+        source = (spark.read.parquet(parquet_dir).select(*COLUMNS)
+                  .withColumn("event_ts_epoch_us", F.unix_micros("event_ts")))
         source_count = source.count()
         source_unique = source.select("event_id").distinct().count()
         source_alerts = source.filter(F.col("risk_flag")).count()
