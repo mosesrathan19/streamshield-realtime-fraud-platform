@@ -169,6 +169,10 @@ The local macOS Spark 3.5.6 streaming job restarted with the **existing** `outpu
 
 This confirms a **graceful checkpoint-based restart followed by incremental processing without duplicate persisted event IDs** for this local test. A final no-new-message restart was also run and the read-only verifier reported **PASS**, unchanged at **10,100 rows, 10,100 unique IDs, 163 synthetic risk flags**, with the 100 new IDs verified. Forced interruption during a micro-batch remains untested; these results do not prove end-to-end exactly-once semantics or fault tolerance under forced process termination.
 
+## Phase 5C: Isolated late and out-of-order event test
+
+The [Phase 5C watermark experiment](docs/PHASE5_WATERMARK.md) is committed but **not yet run locally**. It uses a separate one-partition Kafka topic, isolated Parquet sink and Spark checkpoint, and a two-stage fixture with a late event, a within-watermark out-of-order event, an on-time event, and a duplicate ID. The read-only verifier checks actual persisted IDs. No claim is made until the fixture is executed and results are inspected.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -177,7 +181,7 @@ This confirms a **graceful checkpoint-based restart followed by incremental proc
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and graceful Spark checkpoint replay verified; forced crashes, late data and DLQ pending |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; isolated watermark test ready, forced crashes and DLQ pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
