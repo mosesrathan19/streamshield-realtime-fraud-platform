@@ -1,6 +1,6 @@
 # Phase 5B — Spark checkpoint restart test
 
-**Status: code and procedure committed; test has not yet been executed on the user's Mac.**
+**Status: locally verified November 25, 2026.** The user completed baseline verification (10,000 unique events, 161 risk flags), a no-new-data graceful restart (unchanged), publishing 100 additional acknowledged events, incremental Spark processing to 10,100 unique events and 163 risk flags, and a final no-new-message restart that again passed with the same counts.
 
 This is a **graceful stop/restart** checkpoint test. It verifies the existing Spark Structured Streaming query resumes from previously committed Kafka offsets, processes a new batch and retains unique event IDs in the existing Parquet output. It is **not** a SIGKILL/crash-recovery test yet.
 
@@ -66,7 +66,7 @@ Expected `status: PASS`, `persisted_events: 10100`, `unique_event_ids: 10100`, `
 
 ## Step 4: repeat restart without new messages
 
-Run the Step 1 `spark-submit` command again, then the Step 3 verifier again. Expected: unchanged 10,100 unique events, demonstrating a no-op replay with persisted Kafka offsets. You can run this only after Step 3 passes.
+Run the Step 1 `spark-submit` command again, then the Step 3 verifier again. **Verified locally:** unchanged 10,100 unique events, 163 synthetic risk flags, all 100 new event IDs present; status PASS. This demonstrates a no-op replay with persisted Kafka offsets.
 
 ## Boundaries of the claim
 
