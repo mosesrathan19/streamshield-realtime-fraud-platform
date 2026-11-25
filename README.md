@@ -175,7 +175,7 @@ The [Phase 5C watermark experiment](docs/PHASE5_WATERMARK.md) was **verified loc
 
 ## Phase 5D: Isolated malformed-event quarantine test (awaiting local verification)
 
-The [Phase 5D DLQ/quarantine guide](docs/PHASE5_DLQ.md) describes an isolated six-message Kafka fixture and separate Spark Parquet sinks: 2 valid transactions and 4 deliberately invalid records. The rejected sink stores the Kafka topic/partition/offset, optional event ID, and rejection reason **without retaining raw payloads**. A read-only verifier checks all six Kafka offsets are accounted for and that no invalid records enter the accepted output. The user verified the isolated Spark routing and independent verifier on November 25, 2026: **PASS**, 6 Kafka offsets reconciled, 2 accepted, 4 rejected, and one rejection each for invalid amount, missing account ID, invalid timestamp and malformed/missing event ID. A subsequent no-new-message restart is not yet verified. This is a local Parquet quarantine/DLQ equivalent; the dedicated Kafka DLQ topic is not published to.
+The [Phase 5D DLQ/quarantine guide](docs/PHASE5_DLQ.md) describes an isolated six-message Kafka fixture and separate Spark Parquet sinks: 2 valid transactions and 4 deliberately invalid records. The rejected sink stores the Kafka topic/partition/offset, optional event ID, and rejection reason **without retaining raw payloads**. A read-only verifier checks all six Kafka offsets are accounted for and that no invalid records enter the accepted output. The user verified the isolated Spark routing and independent verifier on November 25, 2026: **PASS**, 6 Kafka offsets reconciled, 2 accepted, 4 rejected, and one rejection each for invalid amount, missing account ID, invalid timestamp and malformed/missing event ID. The user subsequently restarted the identical Spark DLQ job using the same checkpoints, and the independent verifier again returned **PASS** with unchanged totals (2 accepted, 4 rejected, all 6 source offsets reconciled), demonstrating no duplicate persisted effects in this controlled replay. This is a local Parquet quarantine/DLQ equivalent; the dedicated Kafka DLQ topic is not published to.
 
 ## Roadmap for flagship portfolio completion
 
@@ -185,7 +185,7 @@ The [Phase 5D DLQ/quarantine guide](docs/PHASE5_DLQ.md) describes an isolated si
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; watermark verified; isolated Parquet quarantine validated; replay test, forced crashes and Kafka DLQ publication pending |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; watermark verified; isolated Parquet quarantine and replay verified; forced crashes and Kafka DLQ publication pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
