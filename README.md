@@ -267,3 +267,6 @@ Spark query timing includes the call to start the query, `availableNow` processi
 
 The [1M Kafka → Spark benchmark runbook](docs/PHASE6_1M_SCALE.md) adds a guarded one-time synthetic fixture (six Kafka partitions, `streamshield.benchmark_1m.v1`) and the existing Spark enrichment pipeline writing to `outputs/spark_benchmark_1m_v1`. The job automatically saves producer and Spark query duration/throughput JSON reports, with an independent Kafka-offset and event-ID verifier. The producer has a minimum 5 GiB *host* free-space preflight; Docker VM storage and memory also need checking. **No 1M run or performance measurements have been verified yet.** The completed 100K trial remains untouched.
 
+
+**Observed 1M Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_1m.v1`, 6 partitions; attempted **1,000,000**, acknowledged **1,000,000**, failed **0**, unflushed **0**; elapsed **5.398 s**, acknowledged producer throughput **185,241.2 events/sec**; host free space before publishing **26.53 GiB**. The producer saved a local `outputs/spark_benchmark_1m_v1/producer_result.json` file. Spark processing, final Parquet reconciliation, and related throughput remain **pending local verification**. Producer throughput is a separate stage measurement, not end-to-end streaming throughput.
+
