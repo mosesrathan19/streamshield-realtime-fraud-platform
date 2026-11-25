@@ -61,6 +61,7 @@ services:
       STREAMSHIELD_PG_DSN: "postgresql://streamshield:streamshield_dev_only@postgres:5432/streamshield_utc"
       STREAMSHIELD_KAFKA_HOST: kafka
       STREAMSHIELD_KAFKA_PORT: "19092"
+      STREAMSHIELD_KAFKA_BOOTSTRAP: "kafka:19092"
       STREAMSHIELD_PG_HOST: postgres
       STREAMSHIELD_PG_PORT: "5432"
     volumes:
