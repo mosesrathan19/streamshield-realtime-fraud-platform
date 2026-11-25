@@ -1,6 +1,6 @@
 # Phase 5D — Malformed event quarantine / Dead-Letter Queue demonstration
 
-**Status: initial local runtime verification PASSED on November 25, 2026; no-new-message checkpoint replay remains pending.** The verifier showed 6 total messages, 2 accepted, 4 rejected and 6 reconciled Kafka offsets. Rejection reasons: `invalid_amount` (1), `invalid_event_time` (1), `missing_account_id` (1), `missing_or_malformed_event_id` (1).
+**Status: local routing and no-new-message checkpoint replay verified November 25, 2026.** The verifier showed 6 total messages, 2 accepted, 4 rejected and 6 reconciled Kafka offsets. Rejection reasons: `invalid_amount` (1), `invalid_event_time` (1), `missing_account_id` (1), `missing_or_malformed_event_id` (1).
 
 ## Architecture / isolation
 
@@ -69,6 +69,8 @@ If the verifier fails, **do not erase checkpoints or republish**. Share the outp
 ## Step 5 — Replay test (only after Step 4 passes)
 
 Run the identical `spark-submit` command again, then rerun `python -m streamshield.dlq_verify`. Counts should remain 2 accepted and 4 rejected because the checkpoints remember committed source offsets.
+
+**Observed replay result:** after running the Spark DLQ job a second time with the unchanged source and checkpoints, the read-only verifier again returned `PASS`, `total=6`, `accepted=2`, `rejected=4`, `reconciled_kafka_offsets=6`, and one of each expected rejection reason. No duplicate persisted records were observed.
 
 ## What this proves and does not prove
 
