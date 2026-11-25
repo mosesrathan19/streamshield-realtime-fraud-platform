@@ -185,6 +185,23 @@ The [Phase 5E forced-crash runbook](docs/PHASE5_SPARK_FORCED_CRASH.md) now provi
 
 The [Phase 6 measurement guide](docs/PHASE6_BENCHMARK.md) starts with a **fresh 100,000-event local JSONL-to-SQLite baseline** to establish machine-specific processing throughput and data correctness. Planned subsequent runs will benchmark Kafka-to-Spark separately, with fresh topics/checkpoints and explicit scope. No macOS Phase 6 results have been measured yet; local file/SQLite throughput must not be represented as Kafka/Spark throughput or p95 event latency.
 
+## Verified Phase 6 local macOS 100K baseline (November 25, 2026)
+
+**Machine/environment:** macOS 26.6.2 (build 25G83), arm64, Python 3.11.9. Local synthetic JSONL → SQLite processing only; **not** Kafka, Spark, streaming latency or end-to-end throughput.
+
+| Measurement | Fresh database | Existing database replay |
+|---|---:|---:|
+| Generated transactions | 100,000 | 100,000 |
+| Generation duration | 0.435 s | 0.432 s |
+| Processing duration | **0.501 s** | **0.474 s** |
+| Processing rate | **199,494.0 events/s** | **211,121.9 events/s** |
+| Newly inserted | 100,000 | 0 |
+| Duplicate records | 0 | 100,000 |
+| Rejected records | 0 | 0 |
+| Newly written synthetic risk alerts | 1,608 | 0 |
+
+The first observed replay run used an existing database and therefore exercised duplicate rejection. The subsequent **fresh** trial used `outputs/phase6_fresh_100k_trial2.db` and inserted all 100,000 events, creating 1,608 synthetic risk alerts. These are single-run measurements, not repeat-trial percentiles or performance guarantees. Streaming-stage benchmarking remains pending.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -194,7 +211,7 @@ The [Phase 6 measurement guide](docs/PHASE6_BENCHMARK.md) starts with a **fresh 
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and Spark checkpoint restart verified; watermark verified; isolated Parquet quarantine and replay verified; forced Spark driver crash and checkpoint recovery verified; final no-op replay and Kafka DLQ publication pending |
-| 6 | Million-event load tests, throughput/p95 lag, resource profiling | 100K local benchmark instructions ready; not yet run |
+| 6 | Million-event load tests, throughput/p95 lag, resource profiling | 100K macOS local SQLite fresh-ingestion and replay measured; Kafka/Spark throughput pending |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
 **Target stretch goal:** reproducibly ingest and process 5M+ synthetic transactions on appropriately provisioned hardware. No performance or scale result is claimed until actually measured.
