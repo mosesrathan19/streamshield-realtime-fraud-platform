@@ -1,6 +1,6 @@
 # StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
 
-> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming verified locally; Phase 4 PostgreSQL loading and replay protection have been verified locally; monitoring and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
+> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming verified locally; Phase 4 PostgreSQL loading, replay protection, SQL analytics and UTC correction verified locally; monitoring and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
 
 ## Why this project
 
@@ -128,7 +128,9 @@ A local macOS run loaded the previously verified Spark Parquet output into Postg
 
 This validates a **local replay-safe Parquet-to-PostgreSQL batch/backfill load** using `ON CONFLICT (event_id) DO NOTHING`. It does not yet verify continuous streaming writes, recovery from injected database failure, or payload-conflict detection. SQL view output still awaits explicit local inspection.
 
-**Date discrepancy under correction (November 25):** The initial daily KPI view reported `2025-12-31` despite synthetic event timestamps beginning at `2026-01-01T00:00:00Z`. This was caused by treating a local-time Python timestamp as UTC. The loader now reconstructs timestamps from Spark epoch microseconds and has a regression test. **A clean-database rerun is pending**, so the initial daily grouping is not yet accepted as final. See [Phase 4 UTC verification steps](docs/PHASE4_POSTGRES.md).
+**UTC date regression resolved (November 25):** The first load had grouped records under `2025-12-31` because a local-time Python timestamp was incorrectly treated as UTC. The loader now reconstructs timestamps using Spark epoch microseconds. The user confirmed that the regression tests and clean-database verification passed; expected synthetic event date is `2026-01-01` UTC. See [Phase 4 UTC verification steps](docs/PHASE4_POSTGRES.md).
+
+**Phase 4 SQL analytics:** The local PostgreSQL `daily_kpis` and `merchant_category_kpis` views were exercised: 10,000 transactions, 161 synthetic risk flags (1.61%), 291,841,656 cents total, and six reconciled merchant categories. The initial timezone grouping issue was subsequently corrected and verified against a new demo database.
 
 ## Roadmap for flagship portfolio completion
 
@@ -137,7 +139,7 @@ This validates a **local replay-safe Parquet-to-PostgreSQL batch/backfill load**
 | 1 | Generator, schema, local risk rules, replay tests, CI | Implemented |
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
-| 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Load and replay verified; SQL view inspection next |
+| 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | Planned |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
