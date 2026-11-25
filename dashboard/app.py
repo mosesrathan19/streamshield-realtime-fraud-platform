@@ -19,6 +19,7 @@ from health import dependency_checks, report_checks
 from kafka_observability import kafka_topic_offsets
 from kafka_groups import kafka_consumer_groups
 from spark_checkpoints import inspect_known_checkpoints
+from streamshield.microbatch_metrics import load_progress
 
 st.set_page_config(
     page_title="StreamShield | Streaming Analytics",
@@ -63,7 +64,7 @@ def read_benchmarks() -> list[dict]:
 with st.sidebar:
     st.markdown("## 🛡️ StreamShield")
     st.caption("STREAMING ANALYTICS · LOCAL DEV")
-    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Consumer Groups", "Spark Checkpoints", "Pipeline Architecture"])
+    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Consumer Groups", "Spark Checkpoints", "Spark Micro-Batches", "Pipeline Architecture"])
     st.divider()
     st.markdown("**Data sources**")
     st.caption("PostgreSQL: historical backfill snapshot")
@@ -318,6 +319,58 @@ elif page == "Spark Checkpoints":
         "Source offset advances are not equivalent to persisted output rows after "
         "filtering, watermarking, or deduplication. Historical inputRowsPerSecond, "
         "processedRowsPerSecond and durationMs were not saved in these checkpoints."
+    )
+
+elif page == "Spark Micro-Batches":
+    st.subheader("Spark micro-batch performance — measured fixture")
+    st.caption(
+        "Actual Spark StreamingQueryProgress from a separate 3,000-event synthetic fixture. "
+        "Not a running-driver probe and not the earlier 100K/1M benchmarks."
+    )
+    progress_path = Path(__file__).resolve().parents[1] / (
+        "outputs/spark_microbatch_3k_v1/progress_report.json"
+    )
+    try:
+        progress = load_progress(progress_path)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        st.warning("Unable to read the saved Spark progress report.")
+        st.caption(f"{type(exc).__name__}: {exc}")
+    else:
+        if progress is None:
+            st.info(
+                "No Phase 11 report yet. Publish the isolated 3K fixture once "
+                "and run its Spark query using the Phase 11 guide."
+            )
+        else:
+            batches = pd.DataFrame(progress["batches"])
+            if batches.empty:
+                st.info("The progress report contains no recorded micro-batches.")
+            else:
+                a, b, d = st.columns(3)
+                a.metric("Recorded batches", len(batches))
+                b.metric("Spark input rows", f'{int(batches["num_input_rows"].sum()):,}')
+                d.metric(
+                    "Max batch trigger execution",
+                    f'{int(batches["trigger_execution_ms"].dropna().max()):,} ms'
+                    if batches["trigger_execution_ms"].notna().any() else "Unavailable",
+                )
+                st.subheader("Spark-reported micro-batch rates")
+                st.line_chart(
+                    batches.set_index("batch_id")[
+                        ["input_rows_per_second", "processed_rows_per_second"]
+                    ], height=310
+                )
+                st.subheader("Trigger execution time")
+                st.bar_chart(
+                    batches.set_index("batch_id")[["trigger_execution_ms"]],
+                    color="#e9a96a", height=270,
+                )
+                with st.expander("View measured batch records"):
+                    st.dataframe(batches, hide_index=True, use_container_width=True)
+    st.info(
+        "Spark input row counts are not identical to accepted Parquet rows after "
+        "validation, watermarking and deduplication. Processing rates are Spark "
+        "batch statistics, not end-to-end event latency or steady-state performance."
     )
 
 elif page == "System Health":
