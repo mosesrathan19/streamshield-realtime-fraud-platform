@@ -17,6 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data import benchmarks, postgres_snapshots, DEFAULT_DSN
 from health import dependency_checks, report_checks
 from kafka_observability import kafka_topic_offsets
+from kafka_groups import kafka_consumer_groups
 
 st.set_page_config(
     page_title="StreamShield | Streaming Analytics",
@@ -61,7 +62,7 @@ def read_benchmarks() -> list[dict]:
 with st.sidebar:
     st.markdown("## 🛡️ StreamShield")
     st.caption("STREAMING ANALYTICS · LOCAL DEV")
-    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Pipeline Architecture"])
+    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Consumer Groups", "Pipeline Architecture"])
     st.divider()
     st.markdown("**Data sources**")
     st.caption("PostgreSQL: historical backfill snapshot")
@@ -240,6 +241,46 @@ elif page == "Kafka Topics":
         "Spark checkpoint progress and consumer-group lag require separate instrumentation."
     )
 
+elif page == "Consumer Groups":
+    st.subheader("Kafka consumer groups — committed offsets")
+    st.caption(
+        "Read-only point-in-time broker snapshot of existing consumer groups. "
+        "Lag is computed only for partitions with comparable committed offsets. "
+        "No consumer is started or registered by this page."
+    )
+    try:
+        groups = kafka_consumer_groups()
+    except Exception as exc:
+        st.warning("Kafka group inspection unavailable; check the broker and Docker logs.")
+        st.caption(f"{type(exc).__name__}: {exc}")
+    else:
+        a, b, d = st.columns(3)
+        a.metric("Existing groups discovered", groups["group_count"])
+        b.metric("Groups inspected", groups["inspected_groups"])
+        d.metric("Group partitions with commits", sum(x["committed"] is not None for x in groups["rows"]))
+        if groups["skipped_groups"]:
+            st.warning(f'{groups["skipped_groups"]} groups were not inspected due to the safety cap.')
+        if not groups["rows"]:
+            st.info(
+                "No committed offsets for streamshield.* topics were found in the inspected "
+                "groups. This is normal when Spark uses checkpoint-based offset tracking "
+                "instead of Kafka group commits. No lag can be calculated."
+            )
+        else:
+            rows = groups["rows"]
+            comparable = [x for x in rows if x["lag"] is not None]
+            if comparable:
+                st.metric("Comparable committed-offset lag (inspected partitions)",
+                          f'{sum(x["lag"] for x in comparable):,}')
+            else:
+                st.info("No comparable committed offsets were found; lag is unavailable.")
+            st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+    st.info(
+        "Group lag here is latest Kafka offset minus committed group offset, only when "
+        "that offset is within the retained broker range. It is not Spark checkpoint "
+        "progress, processing latency, or proof that a pipeline is healthy."
+    )
+
 elif page == "System Health":
     st.subheader("Local component reachability")
     st.caption("Point-in-time TCP checks. Reachable does not guarantee broker readiness, SQL query health, consumer-group progress, or end-to-end latency.")
@@ -291,7 +332,7 @@ else:
         "only through the saved aggregate JSON files, not merged into the DB."
     )
     st.markdown(
-        "**Not implemented as real-time monitoring yet:** broker lag polling, "
+         "**Not implemented as real-time monitoring yet:** automatic Kafka polling, "
         "consumer-group health, live alert delivery, end-to-end latency percentiles, "
         "automatic incident alerts or continuously streaming PostgreSQL writes."
     )
