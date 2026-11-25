@@ -1,6 +1,6 @@
 # Phase 10A — Kafka Topic Offset Observability
 
-**Status:** Implemented in GitHub; awaiting local unit tests, Docker browser verification, and broker output inspection.
+**Status:** Verified on macOS, November 25, 2026. User confirmed the unit tests passed and the optional Docker dashboard started. Browser screenshot shows the Kafka Topics page successfully reading 9 matching topics and 33 partitions with a combined retained offset span of 1,210,412 at capture time (a point-in-time offset range, not message count or consumer lag).
 
 ## What was added
 
