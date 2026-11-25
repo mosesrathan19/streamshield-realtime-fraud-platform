@@ -170,3 +170,6 @@ Do not run the publisher twice or erase existing outputs. If the Spark job fails
 ## Publishing guidelines
 
 Report OS, Python version, available resources, event count, reproducibility seed, command, raw output, timestamp, warm-up policy, and whether the measured duration includes fixture creation. Don't compare dissimilar measurement scopes as if they represent the same throughput.
+
+**Verified v2 Spark data reconciliation (November 25, 2026):** Read-only verifier returned `PASS`, `total_events=100000`, `unique_event_ids=100000`, `invalid_event_ids=0`, and `reconciled_kafka_offsets=100000` with no errors. All six Kafka partitions had contiguous offset ranges and per-partition counts 16,807 / 16,601 / 16,530 / 17,172 / 16,509 / 16,381. The saved Spark processing-time JSON has not yet been supplied; no Spark throughput claim is made.
+
