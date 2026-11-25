@@ -85,7 +85,7 @@ def main():
         report = folder / "benchmark_result.json"
         with report.open("x", encoding="utf-8") as handle:
             json.dump(payload, handle, indent=2)
-            handle.write("\\n")
+            handle.write("\n")
         print(json.dumps(payload, indent=2))
         print(f"Saved benchmark results to: {report}")
     finally:
