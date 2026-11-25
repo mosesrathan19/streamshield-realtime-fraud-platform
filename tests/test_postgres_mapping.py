@@ -9,7 +9,8 @@ class MappingTests(unittest.TestCase):
         return dict(
             event_id="e1", transaction_id="t1", account_id="a1",
             merchant_id="m1", merchant_category="travel", amount_cents=15000,
-            currency="USD", country="US", event_ts=datetime(2026, 1, 1),
+            currency="USD", country="US", event_ts=datetime(2025, 12, 31, 16),
+            event_ts_epoch_us=1767225600000000,
             risk_high_amount=False, risk_synthetic_country=False, risk_flag=False,
         )
 
@@ -18,6 +19,13 @@ class MappingTests(unittest.TestCase):
         self.assertEqual(len(values), len(COLUMNS))
         self.assertEqual(values[0], "e1")
         self.assertEqual(values[8].tzinfo, timezone.utc)
+        self.assertEqual(values[8], datetime(2026, 1, 1, tzinfo=timezone.utc))
+
+    def test_missing_epoch_rejected(self):
+        item = self.sample()
+        del item["event_ts_epoch_us"]
+        with self.assertRaises(ValueError):
+            normalize_row(item)
 
     def test_missing_field_rejected(self):
         item = self.sample()
