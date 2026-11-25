@@ -235,3 +235,6 @@ The independent read-only `stream_bench_verify` on the user's Apple Silicon Mac 
 
 After the 100K v1 Kafka/Spark Parquet benchmark passed independent ID/offset reconciliation, its original query elapsed time was unavailable. The v1 benchmark intentionally refuses a subsequent attempt to overwrite the existing Parquet output. A distinct [v2 benchmark trial](docs/PHASE6_BENCHMARK.md) is now implemented against `streamshield.benchmark_100k.v2` and `outputs/spark_benchmark_100k_v2`, with **automatic JSON persistence** of query duration and throughput at `outputs/spark_benchmark_100k_v2/benchmark_result.json`. No v2 runtime measurements are claimed until the local test passes.
 
+
+**Verified v2 Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_100k.v2`; 6 partitions; 100,000 attempted/acknowledged, 0 failed, 0 unflushed; measured producer duration **0.987 seconds** and acknowledged rate **101,282.7 events/sec**. This is publisher-side timing and does not measure Spark processing or end-to-end latency. The v2 Spark trial and independent reconciliation remain pending.
+
