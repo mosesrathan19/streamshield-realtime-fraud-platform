@@ -38,14 +38,18 @@ def schema():
     ])
 
 
-def parsed_stream(spark, brokers: str, topic: str = TOPIC):
+def parsed_stream(spark, brokers: str, topic: str = TOPIC,\n                  max_offsets_per_trigger: int | None = None):
     from pyspark.sql import functions as F
-    kafka = (spark.readStream.format("kafka")
-             .option("kafka.bootstrap.servers", brokers)
-             .option("subscribe", topic)
-             .option("startingOffsets", "earliest")
-             .option("failOnDataLoss", "true")
-             .load())
+    reader = (spark.readStream.format("kafka")
+              .option("kafka.bootstrap.servers", brokers)
+              .option("subscribe", topic)
+              .option("startingOffsets", "earliest")
+              .option("failOnDataLoss", "true"))
+    if max_offsets_per_trigger is not None:
+        if max_offsets_per_trigger < 1:
+            raise ValueError("max_offsets_per_trigger must be positive")
+        reader = reader.option("maxOffsetsPerTrigger", max_offsets_per_trigger)
+    kafka = reader.load()
     # Keep Kafka metadata to assist troubleshooting and reconciliation.
     parsed = kafka.select(
         F.col("partition").alias("kafka_partition"),
@@ -70,9 +74,9 @@ def parsed_stream(spark, brokers: str, topic: str = TOPIC):
 
 
 def enriched_stream(spark, brokers: str, watermark: str = "10 minutes",
-                    topic: str = TOPIC):
+                    topic: str = TOPIC, max_offsets_per_trigger: int | None = None):
     from pyspark.sql import functions as F
-    accepted = (parsed_stream(spark, brokers, topic)
+    accepted = (parsed_stream(spark, brokers, topic, max_offsets_per_trigger)
                 .withWatermark("event_ts", watermark)
                 .dropDuplicatesWithinWatermark(["event_id"]))
     return accepted.withColumn(
