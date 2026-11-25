@@ -271,5 +271,24 @@ The [1M Kafka → Spark benchmark runbook](docs/PHASE6_1M_SCALE.md) adds a guard
 **Observed 1M Kafka producer result (November 25, 2026):** Topic `streamshield.benchmark_1m.v1`, 6 partitions; attempted **1,000,000**, acknowledged **1,000,000**, failed **0**, unflushed **0**; elapsed **5.398 s**, acknowledged producer throughput **185,241.2 events/sec**; host free space before publishing **26.53 GiB**. The producer saved a local `outputs/spark_benchmark_1m_v1/producer_result.json` file. Spark Parquet reconciliation passed; measured Spark query duration and throughput remain pending review of the saved JSON. Producer throughput is a separate stage measurement, not end-to-end streaming throughput.
 
 
-**Verified 1M Spark/Parquet reconciliation (November 25, 2026):** Local read-only verifier returned `PASS` with **1,000,000 persisted events**, **1,000,000 distinct event IDs**, **0 invalid IDs**, **1,000,000 reconciled Kafka offsets**, and `errors=[]`. Partition row counts (0–5): **168,159 / 165,140 / 165,021 / 171,692 / 166,078 / 163,910**; each partition's offset range started at 0 and ended at rows−1, with all offsets unique. The Spark processing report `benchmark_result.json` has not yet been shared, so query runtime, throughput, and synthetic flag count are not yet recorded. This is isolated local correctness verification, not proof of end-to-end exactly-once semantics.
+**Verified 1M Spark/Parquet reconciliation (November 25, 2026):** Local read-only verifier returned `PASS` with **1,000,000 persisted events**, **1,000,000 distinct event IDs**, **0 invalid IDs**, **1,000,000 reconciled Kafka offsets**, and `errors=[]`. Partition row counts (0–5): **168,159 / 165,140 / 165,021 / 171,692 / 166,078 / 163,910**; each partition's offset range started at 0 and ended at rows−1, with all offsets unique. The Spark processing report `benchmark_result.json` has now been shared and verified; see the 1M benchmark result table below. This is isolated local correctness verification, not proof of end-to-end exactly-once semantics.
+
+
+## Verified Phase 6D 1M streaming benchmark results (November 25, 2026)
+
+The locally saved `outputs/spark_benchmark_1m_v1/benchmark_result.json` was inspected after the independent read-only Kafka offset and event-ID reconciliation returned **PASS**.
+
+| Metric | 100K v2 measured | 1M v1 measured |
+|---|---:|---:|
+| Events published / persisted | 100,000 / 100,000 | 1,000,000 / 1,000,000 |
+| Kafka producer elapsed | 0.987 s | **5.398 s** |
+| Acknowledged producer rate | 101,282.7 events/s | **185,241.2 events/s** |
+| Spark availableNow query elapsed | 8.788 s | **19.433 s** |
+| Spark persisted events/query second | 11,379.5 | **51,459.2** |
+| Synthetic illustrative risk flags | 1,609 | **16,084** |
+| Unique persisted event IDs | 100,000 | **1,000,000** |
+| Reconciled Kafka offsets | 100,000 | **1,000,000** |
+| Independent integrity check | PASS | **PASS** |
+
+Spark rate was **4.52×** higher in the 1M run, but these are two single runs at different workload sizes and not repeated steady-state throughput experiments. The Spark timing includes query start, `availableNow` processing, checkpointed Parquet completion; it excludes Kafka publishing, SparkSession startup and post-run verification. Producer and Spark figures represent separate measurement scopes, not end-to-end latency or a single concurrent throughput rate. These checks demonstrate local result completeness/uniqueness for this synthetic fixture; they do not imply exactly-once across external sinks.
 
