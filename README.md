@@ -155,6 +155,20 @@ The loader raised the expected `SIMULATED_FAILURE_AFTER_COMMIT` error; rerunning
 
 A [non-destructive Spark checkpoint restart test](docs/PHASE5_SPARK_CHECKPOINT.md) has been added, including a read-only verifier and unit tests. It checks the existing 10,000-event baseline, graceful Spark restart with the same checkpoints, ingestion of 100 new Kafka events, then repeated restart without duplicate persisted output. **This portion is coded but has not yet been run locally.** It does not test a forced process crash or distributed fault recovery.
 
+## Verified Phase 5 Spark checkpoint incremental restart (November 25, 2026)
+
+The local macOS Spark 3.5.6 streaming job restarted with the **existing** `outputs/spark_phase3` checkpoint and retained its previously verified 10,000 persisted events. An initial attempt to publish 100 more records had not reached Kafka because the active Python virtual environment lacked the `confluent-kafka` dependency; installing the Kafka extra resolved that prerequisite. The producer subsequently acknowledged 100 of 100 new events (0 failures; 0 unflushed), and Spark was run again using the same checkpoint.
+
+| Read-only Parquet verification metric | Baseline | After incremental resume |
+|---|---:|---:|
+| Persisted events | 10,000 | **10,100** |
+| Distinct event IDs | 10,000 | **10,100** |
+| Synthetic risk flags | 161 | **163** |
+| New event IDs verified (10000–10099) | — | **100** |
+| Verifier status | PASS | **PASS** |
+
+This confirms a **graceful checkpoint-based restart followed by incremental processing without duplicate persisted event IDs** for this local test. A final no-new-message restart and forced interruption during a micro-batch remain untested; the result does not prove end-to-end exactly-once semantics or fault tolerance under forced process termination.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -163,7 +177,7 @@ A [non-destructive Spark checkpoint restart test](docs/PHASE5_SPARK_CHECKPOINT.m
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
 | 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Verified locally |
-| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery verified; Spark restart test ready; forced crashes, late data and DLQ pending |
+| 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | PostgreSQL recovery and incremental Spark checkpoint restart verified; forced crashes, late data and DLQ pending |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
 
