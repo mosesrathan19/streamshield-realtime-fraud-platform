@@ -230,3 +230,8 @@ The independent read-only `stream_bench_verify` on the user's Apple Silicon Mac 
 
 **Performance measurement pending:** The user has not supplied the separate Spark benchmark JSON containing `spark_query_elapsed_seconds` and `persisted_events_per_query_second`. Do not infer Kafka/Spark throughput or event latency from the read-only reconciliation results.
 
+
+## Phase 6C: Saved-timing streaming benchmark (v2, local run pending)
+
+After the 100K v1 Kafka/Spark Parquet benchmark passed independent ID/offset reconciliation, its original query elapsed time was unavailable. The v1 benchmark intentionally refuses a subsequent attempt to overwrite the existing Parquet output. A distinct [v2 benchmark trial](docs/PHASE6_BENCHMARK.md) is now implemented against `streamshield.benchmark_100k.v2` and `outputs/spark_benchmark_100k_v2`, with **automatic JSON persistence** of query duration and throughput at `outputs/spark_benchmark_100k_v2/benchmark_result.json`. No v2 runtime measurements are claimed until the local test passes.
+
