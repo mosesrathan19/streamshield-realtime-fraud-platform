@@ -77,11 +77,11 @@ docker compose --profile dashboard up -d --build
 
 Open **http://localhost:8501 → Kafka Topics**. **Locally verified November 25, 2026:** user reported unit tests passed; browser showed 9 matching topics, 33 partitions, and a retained offset span of 1,210,412. This is a point-in-time offset range, not a message count or consumer lag. Details: [Phase 10A Kafka observability](docs/PHASE10_KAFKA_OBSERVABILITY.md).
 
-### 📈 Phase 10B — Kafka consumer-group lag (local verification pending)
+### 📈 Phase 10B — Kafka consumer-group lag (locally verified)
 
 A new **Consumer Groups** Streamlit page reads existing Kafka group commits with the read-only Kafka Admin API. It reports per-partition `latest offset - committed offset` **only when the commit is inside the broker's retained offset range**. No commit means **lag unavailable**, not zero. **Spark Structured Streaming uses independent checkpoint offsets; group lag must not be interpreted as Spark query progress.** No consumer group is created or joined.
 
-Launch with `docker compose --profile dashboard up -d --build` after `git pull` and the unit tests. See [Phase 10B guide](docs/PHASE10B_CONSUMER_LAG.md). The feature is **not yet verified on the local Mac**.
+Launch with `docker compose --profile dashboard up -d --build` after `git pull` and the unit tests. See [Phase 10B guide](docs/PHASE10B_CONSUMER_LAG.md). **Locally verified November 25, 2026:** browser showed 2 groups inspected, 12 partitions with committed offsets, and a combined comparable Kafka group lag of 200. These are point-in-time values, not Spark checkpoint progress.
 
 ### ✅ Reliability demonstrated
 
