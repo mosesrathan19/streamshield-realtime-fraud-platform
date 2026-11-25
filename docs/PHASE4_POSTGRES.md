@@ -1,6 +1,6 @@
 # Phase 4 — PostgreSQL analytics (local macOS)
 
-**Status:** Initial load, identical replay, and SQL KPI queries verified locally on November 25, 2026 (10,000 transactions; 161 synthetic risk flags). The initial SQL daily view revealed a UTC date conversion bug; code has been corrected, but a clean-database rerun is still pending.
+**Status:** Verified locally on November 25, 2026. Initial load (10,000 records, 161 synthetic risk flags), identical replay (zero new inserts), SQL analytics views, regression tests, and clean-database UTC correction were reported successful.
 
 ## Architecture / scope
 
@@ -64,7 +64,7 @@ python -m streamshield.postgres_load \
 docker exec streamshield-postgres psql -U streamshield -d streamshield_utc -c "SELECT * FROM daily_kpis ORDER BY event_day_utc;"
 ```
 
-The synthetic generator starts January 1, 2026 UTC; with 10,000 events spaced 30ms apart, the correct daily date is `2026-01-01`. The expected sum is 10,000 transactions and 161 flags. If the database already exists because you retried this procedure, skip the `createdb` line. Avoid running `dropdb` without explicitly reviewing the target.
+The synthetic generator starts January 1, 2026 UTC; with 10,000 events spaced 30ms apart, the correct daily date is `2026-01-01`. The expected sum is 10,000 transactions and 161 flags. The user confirmed this verification passed on November 25, 2026, without providing a full copied output of the clean-database query. If the database already exists because you retried this procedure, skip the `createdb` line. Avoid running `dropdb` without explicitly reviewing the target.
 
 ## Data model
 
