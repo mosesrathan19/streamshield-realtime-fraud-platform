@@ -9,9 +9,9 @@ import argparse
 import json
 from pathlib import Path
 
-from .microbatch_fixture import TOPIC, COUNT
-from .microbatch_metrics import progress_report
-from .spark_stream import enriched_stream, SPARK_VERSION
+from streamshield.microbatch_fixture import TOPIC, COUNT
+from streamshield.microbatch_metrics import progress_report
+from streamshield.spark_stream import enriched_stream, SPARK_VERSION
 
 OUTPUT = Path("outputs/spark_microbatch_3k_v1")
 MAX_OFFSETS_PER_TRIGGER = 500
