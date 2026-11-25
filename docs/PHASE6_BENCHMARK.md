@@ -120,6 +120,51 @@ The independent read-only `stream_bench_verify` on the user's Apple Silicon Mac 
 
 **Performance measurement pending:** The user has not supplied the separate Spark benchmark JSON containing `spark_query_elapsed_seconds` and `persisted_events_per_query_second`. Do not infer Kafka/Spark throughput or event latency from the read-only reconciliation results.
 
+## Stage 3 — Fresh isolated v2 Kafka/Spark trial with saved timing (pending local run)
+
+The original v1 100,000-event Spark output passed full six-partition reconciliation, but the console timing from the first Spark run was not saved. A later attempted v1 rerun was correctly blocked because its Parquet output already existed. The original timing **cannot be reconstructed accurately from the final Parquet row count**.
+
+A separate **v2 trial** uses `streamshield.benchmark_100k.v2` and `outputs/spark_benchmark_100k_v2/`. The original v1 topic, outputs and checkpoints are not modified. The v2 Spark driver saves the measured benchmark JSON to `outputs/spark_benchmark_100k_v2/benchmark_result.json` after completing and validating the query. The publisher refuses to use a nonempty topic, and the Spark benchmark refuses to reuse existing checkpoints/outputs. This is a **new** trial, not recovery of v1 elapsed time.
+
+```bash
+cd ~/Documents/streamshield-realtime-fraud-platform
+git pull
+source .venv-spark/bin/activate
+export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+export PATH="$JAVA_HOME/bin:$PATH"
+python -m unittest discover -s tests -v
+docker compose ps
+```
+
+First publish the v2 Kafka fixture **once**:
+
+```bash
+python -m streamshield.stream_bench_fixture --trial v2
+```
+
+Expect 100,000 acknowledgements and 0 delivery failures. After confirming that result, run Spark with the dedicated output:
+
+```bash
+spark-submit \
+  --master 'local[2]' \
+  --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.6 \
+  src/streamshield/stream_bench_spark.py --trial v2
+```
+
+**To display the saved performance result**:
+
+```bash
+cat outputs/spark_benchmark_100k_v2/benchmark_result.json
+```
+
+Independently verify six partition offset ranges and event IDs:
+
+```bash
+python -m streamshield.stream_bench_verify --trial v2
+```
+
+Do not run the publisher twice or erase existing outputs. If the Spark job fails partway through, **do not rerun the fresh benchmark without inspection**. Report the error first. The `spark_query_elapsed_seconds` is the Spark query's aggregate runtime and does not provide per-event p95/p99 latency or separate producer-to-consumer wall-clock timing.
+
 ## Publishing guidelines
 
 Report OS, Python version, available resources, event count, reproducibility seed, command, raw output, timestamp, warm-up policy, and whether the measured duration includes fixture creation. Don't compare dissimilar measurement scopes as if they represent the same throughput.
