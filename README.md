@@ -63,7 +63,7 @@ docker compose --profile dashboard up -d --build
 # Open http://localhost:8501, then select System Health
 ```
 
-The service mounts `outputs/` **read-only** and is intended for local development. These checks **do not** measure consumer lag, live fraud alerts, or end-to-end latency. **Phase 9 awaits local verification**; see [launch and test instructions](docs/PHASE9_LOCAL_MONITORING.md).
+The service mounts `outputs/` **read-only** and is intended for local development. These checks **do not** measure consumer lag, live fraud alerts, or end-to-end latency. **Phase 9 locally verified on November 25, 2026:** Docker dashboard built and opened in the browser; Kafka and PostgreSQL showed reachable TCP endpoints, three benchmark reports showed Present, and the user confirmed the updated tests passed. See [launch and test instructions](docs/PHASE9_LOCAL_MONITORING.md).
 
 ### ✅ Reliability demonstrated
 
