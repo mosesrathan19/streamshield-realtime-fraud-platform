@@ -1,6 +1,6 @@
 # Phase 10B — Kafka Consumer Group Lag (Read Only)
 
-**Status:** Committed to GitHub; requires local tests and dashboard verification on macOS.
+**Status:** Locally verified November 25, 2026. The user reported completing the local setup/tests; browser screenshot confirms the Docker Streamlit Consumer Groups page displayed two discovered and inspected groups, 12 group partitions with commits, and a point-in-time total comparable committed-offset lag of 200. These are Kafka group offsets, not Spark checkpoint progress.
 
 ## What this actually measures
 
