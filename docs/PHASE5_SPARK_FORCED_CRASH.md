@@ -1,6 +1,6 @@
 # Phase 5E — Real Spark driver SIGKILL and checkpoint recovery
 
-**Status: locally verified November 25, 2026 (partial and full recovery).** Following the isolated forced-interruption test, the independent verifier reported `PASS` with 100 persisted events, 100 unique event IDs and 100 unique Kafka offsets. Restarting the Spark job in recover mode then produced `PASS` with all 300 expected events, 300 unique IDs and 300 accounted-for Kafka offsets. Final no-op replay remains pending.
+**Status: locally verified November 25, 2026 (partial and full recovery).** Following the isolated forced-interruption test, the independent verifier reported `PASS` with 100 persisted events, 100 unique event IDs and 100 unique Kafka offsets. Restarting the Spark job in recover mode then produced `PASS` with all 300 expected events, 300 unique IDs and 300 accounted-for Kafka offsets. The user reported running the final no-op recovery verification; its JSON output was not pasted, so its exact counts remain uninspected.
 
 This is a deliberately destructive test of **one isolated Spark process**, not your existing StreamShield pipelines. It uses its own single-partition Kafka topic, 300 synthetic events, and the checkpointed Parquet output `outputs/spark_crash_phase5`.
 
@@ -87,4 +87,4 @@ Repeat Step 5 (recover mode) and the full verifier. Expect unchanged counts. Do 
 
 This is a **local Spark driver failure test**, not an actual JVM crash, Kafka broker outage, multi-machine failover, or end-to-end exactly-once guarantee. The test uses Spark's checkpoint-aware built-in Parquet sink; outcomes do not automatically carry over to arbitrary external sinks such as PostgreSQL. Force-killing a process after committed micro-batches does not yet test mid-commit failure. Never run this crash mode against the main 10,100-event Spark checkpoint.
 
-The partial and full recovery results above were confirmed by the user's local verifier output. An additional no-new-message restart has not yet been checked.
+The partial and full recovery results above were confirmed by the user's local verifier output. The user reported completing an additional no-new-message restart, but its verifier output has not been shared.
