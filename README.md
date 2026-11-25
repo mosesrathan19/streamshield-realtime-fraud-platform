@@ -1,6 +1,6 @@
 # StreamShield — Real-Time Fraud Detection & Streaming Analytics Platform
 
-> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming verified locally; Phase 4 PostgreSQL analytics code is committed for local verification; monitoring and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
+> **Status: Phase 1 implemented and locally benchmarked; Phase 2 Kafka/Docker successfully tested locally.** Phase 3 PySpark Structured Streaming verified locally; Phase 4 PostgreSQL loading and replay protection have been verified locally; monitoring and large-scale streaming benchmarks are planned. Synthetic data only. No real payment data or fraud decisions.
 
 ## Why this project
 
@@ -112,6 +112,22 @@ The local Spark run emitted informational/warning log messages about network bin
 
 Phase 4 adds a local [PostgreSQL analytics setup guide](docs/PHASE4_POSTGRES.md), a Docker PostgreSQL service, an idempotent loader from Spark Parquet, transaction constraints/indexes, and daily/category KPI views. This stage is **committed but not yet executed on the user's Mac**; it is a batch/backfill sink, not continuous Spark-to-PostgreSQL streaming.
 
+## Verified Phase 4 PostgreSQL ingestion and replay (November 25, 2026)
+
+A local macOS run loaded the previously verified Spark Parquet output into PostgreSQL 16, then reran the **identical load** to test duplicate prevention.
+
+| Metric | First load | Identical replay |
+|---|---:|---:|
+| Source records | 10,000 | 10,000 |
+| Distinct input event IDs | 10,000 | 10,000 |
+| Input synthetic risk flags | 161 | 161 |
+| Newly inserted | **10,000** | **0** |
+| Total PostgreSQL transactions | **10,000** | **10,000** |
+| Total PostgreSQL flagged transactions | **161** | **161** |
+| UTC daily KPI rows | 1 | 1 |
+
+This validates a **local replay-safe Parquet-to-PostgreSQL batch/backfill load** using `ON CONFLICT (event_id) DO NOTHING`. It does not yet verify continuous streaming writes, recovery from injected database failure, or payload-conflict detection. SQL view output still awaits explicit local inspection.
+
 ## Roadmap for flagship portfolio completion
 
 | Phase | Deliverable | Current state |
@@ -119,7 +135,7 @@ Phase 4 adds a local [PostgreSQL analytics setup guide](docs/PHASE4_POSTGRES.md)
 | 1 | Generator, schema, local risk rules, replay tests, CI | Implemented |
 | 2 | Docker Compose Kafka KRaft, topic creation, producer, consumer | Verified locally |
 | 3 | PySpark Structured Streaming, event-time windows, watermarks, deduplication | Verified locally |
-| 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Implemented in code; local verification pending |
+| 4 | PostgreSQL analytical models, alert idempotency, SQL KPI queries | Load and replay verified; SQL view inspection next |
 | 5 | Late/out-of-order events, failure recovery, DLQ, checkpoint tests | Planned |
 | 6 | Million-event load tests, throughput/p95 lag, resource profiling | Planned |
 | 7 | Prometheus/Grafana metrics, runbook, screenshots, security hardening | Planned |
