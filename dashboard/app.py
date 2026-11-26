@@ -16,6 +16,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from data import benchmarks, postgres_snapshots, DEFAULT_DSN
 from health import dependency_checks, report_checks
+from alerts import evaluate_health
 from kafka_observability import kafka_topic_offsets
 from kafka_groups import kafka_consumer_groups
 from spark_checkpoints import inspect_known_checkpoints
@@ -64,7 +65,7 @@ def read_benchmarks() -> list[dict]:
 with st.sidebar:
     st.markdown("## 🛡️ StreamShield")
     st.caption("STREAMING ANALYTICS · LOCAL DEV")
-    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Consumer Groups", "Spark Checkpoints", "Spark Micro-Batches", "Pipeline Architecture"])
+    page = st.radio("Workspace", ["Overview", "Transactions & Risk", "Performance", "System Health", "Kafka Topics", "Consumer Groups", "Spark Checkpoints", "Spark Micro-Batches", "Health Alerts", "Pipeline Architecture"])
     st.divider()
     st.markdown("**Data sources**")
     st.caption("PostgreSQL: historical backfill snapshot")
@@ -371,6 +372,40 @@ elif page == "Spark Micro-Batches":
         "Spark input row counts are not identical to accepted Parquet rows after "
         "validation, watermarking and deduplication. Processing rates are Spark "
         "batch statistics, not end-to-end event latency or steady-state performance."
+    )
+
+elif page == "Health Alerts":
+    st.subheader("Local health checks & alerts — read-only snapshot")
+    st.caption(
+        "Checks Kafka/PostgreSQL TCP connectivity and saved benchmark report presence "
+        "when this page loads or is refreshed. No live alert delivery or auto-restart."
+    )
+    try:
+        health_alerts = evaluate_health(dependency_checks(), report_checks())
+    except (OSError, ValueError, RuntimeError) as exc:
+        st.error("Health checks could not complete; health is UNKNOWN.")
+        st.caption(f"{type(exc).__name__}: {exc}")
+    else:
+        st.metric("Overall observed status", health_alerts["status"])
+        a, b, d = st.columns(3)
+        a.metric("Checks OK", health_alerts["counts"]["OK"])
+        b.metric("Warnings", health_alerts["counts"]["WARNING"])
+        d.metric("Critical connectivity failures", health_alerts["counts"]["CRITICAL"])
+        st.caption(f'Checked at (UTC): {health_alerts["checked_at_utc"]}')
+        df = pd.DataFrame(health_alerts["checks"])
+        if not df.empty:
+            st.dataframe(df, hide_index=True, use_container_width=True)
+        if health_alerts["status"] == "CRITICAL":
+            st.error("At least one TCP connection failed. Review container status and logs; no recovery action was taken.")
+        elif health_alerts["status"] == "WARNING":
+            st.warning("A saved aggregate benchmark report is missing. This is a file-presence warning, not proof of pipeline failure.")
+        else:
+            st.success("Checked TCP endpoints were reachable and expected reports were present; this is not a full pipeline health guarantee.")
+    st.info(
+        "Alerts are local status messages only. TCP reachability is not Kafka readiness "
+        "or SQL query health. Historical Spark checkpoints cannot establish whether a "
+        "stream should be active. Run 'python dashboard/alerts.py --watch' explicitly "
+        "for foreground polling; Ctrl+C stops it."
     )
 
 elif page == "System Health":
