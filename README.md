@@ -4,6 +4,16 @@
 
 A local end-to-end, **synthetic transaction streaming** portfolio project demonstrating Kafka ingestion, Spark event-time processing, data-quality quarantine, checkpoint recovery, replay-safe storage, SQL analytics and a browser-based dashboard. The saved benchmarks have been independently reconciled; this is a learning platform, **not a production fraud-classification system**.
 
+### Portfolio summary
+
+**Built:** A synthetic payment streaming demo using Kafka, PySpark Structured Streaming, Parquet, PostgreSQL, Docker and a read-only Streamlit dashboard.
+
+**Verified:** 1M unique events reconciled from Kafka partitions to Spark Parquet; idempotent PostgreSQL backfill and checkpoint recovery exercises; 62 locally passing unit tests; local Kafka/Spark observability and connectivity checks.
+
+**Measurement boundary:** Kafka producer and Spark query figures were timed **separately**; the PostgreSQL dashboard shows a **historical backfill**, not the 1M benchmark or a continuously served fraud detection system.
+
+**Start here:** [Architecture and interview guide](docs/ARCHITECTURE_AND_INTERVIEW_GUIDE.md) · [Dashboard run instructions](docs/PHASE9_LOCAL_MONITORING.md) · [Performance methodology](docs/PHASE6_BENCHMARK.md)
+
 ### 📸 Dashboard preview
 
 ![StreamShield overview — PostgreSQL transaction KPIs and merchant activity](docs/screenshots/01-overview.jpg)
@@ -108,7 +118,7 @@ These are **limited local connectivity/file-presence notices**, not live Spark h
 - **Invalid event handling:** isolated two-accepted/four-quarantined test with one explicit rejection reason per invalid record; repeat run showed no duplicates.
 - **Event-time behavior:** isolated watermark fixture verified on-time, allowed out-of-order, too-late, and duplicate-event cases.
 - **PostgreSQL replay safety:** simulated post-commit failure recovered from 2K to 10K persisted transactions without duplicate rows.
-- **Tests:** 37 unit tests passed locally when the Streamlit dashboard was verified on November 25, 2026.
+- **Tests:** 62 unit tests passed locally after Phase 12 on November 25, 2026 (the earlier Phase 7 dashboard milestone had 37 tests).
 
 This local demonstration does **not** establish production-grade exactly-once semantics across systems, live transaction risk scoring, multi-node failure tolerance, or automated alert delivery.
 
@@ -118,21 +128,26 @@ This local demonstration does **not** establish production-grade exactly-once se
 
 ## Why this project
 
-Demonstrate event-driven data engineering beyond traditional batch ETL: reproducible high-volume transaction generation, explainable risk signals, schema enforcement, quarantine, and replay-safe processing. Kafka ingestion, Spark streaming, and local PostgreSQL analytics are implemented and tested; upcoming work covers controlled failures, late data, and monitoring.
+Demonstrate event-driven data engineering beyond traditional batch ETL: reproducible high-volume transaction generation, explainable risk signals, schema enforcement, quarantine, and replay-safe processing. Kafka ingestion, Spark streaming, local PostgreSQL analytics, controlled failures, late-data exercises, and read-only observability have been exercised. See the verification history below for scope and limitations.
 
-## Target architecture
+## Implemented architecture
 
 ```mermaid
 flowchart LR
-    A[Synthetic payment generator] --> B[Kafka transactions topic]
+    A[Synthetic payment generator] --> B[Kafka topics]
     B --> C[PySpark Structured Streaming]
-    C --> D[Schema validation & quarantine]
-    C --> E[Event-time fraud features]
-    E --> F[Fraud alert topic]
-    E --> G[PostgreSQL analytics]
-    C --> H[Checkpoint & replay tests]
-    G --> I[Metrics dashboard]
+    C --> D[Validation, watermark, dedup and illustrative risk flags]
+    D --> E[Checkpointed Parquet accepted data]
+    C -. Separate invalid-event fixture .-> Q[Parquet quarantine]
+    E -->|Separate replay-safe batch/backfill| F[PostgreSQL KPI views]
+    F --> G[Read-only Streamlit dashboard]
+    B --> H[Read-only Kafka observability]
+    E --> I[Saved Spark checkpoint and progress inspection]
+    H --> G
+    I --> G
 ```
+
+This is a simplified view of **separately executed** experiments and data paths. The fraud-alert Kafka topic and continuous Spark-to-PostgreSQL streaming sink are **not implemented**. Invalid-event quarantine is stored in Parquet in a separate fixture. See the [accurate architecture and interview guide](docs/ARCHITECTURE_AND_INTERVIEW_GUIDE.md).
 
 **Implemented in Phase 1:** `synthetic JSONL events → validate → explainable risk rules → transactionally deduplicated SQLite event/alert tables`. This is a local baseline, not a distributed streaming system.
 
