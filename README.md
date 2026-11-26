@@ -89,11 +89,11 @@ The **Spark Checkpoints** dashboard page reads existing Spark `offsets/` and `co
 
 After pulling, run the tests and restart the optional dashboard container; select **Spark Checkpoints** at `http://localhost:8501`. **Browser verified November 25, 2026:** three saved checkpoints present, with 4, 2, and 2 committed batch IDs respectively. The user also confirmed the updated unit test suite passed. See [Phase 10C verification guide](docs/PHASE10C_SPARK_CHECKPOINTS.md).
 
-### 📉 Phase 11 — Measured Spark micro-batch performance (verification pending)
+### 📉 Phase 11 — Measured Spark micro-batch performance (locally verified)
 
 The dashboard now offers **Spark Micro-Batches**, which reads actual `StreamingQueryProgress` from a **new, isolated 3K synthetic Kafka → Spark → Parquet fixture**. It will display input records, input/processed rows per second, trigger execution durations, and per-batch statistics. The fixture uses a new Kafka topic and separate output/checkpoint directories; it does not replay or overwrite earlier 100K/1M runs.
 
-**Local execution is pending:** no Phase 11 performance numbers are asserted yet. Run the unit tests and isolated, one-time fixture following [Phase 11 instructions](docs/PHASE11_MICROBATCH_MONITORING.md). These Spark batch measurements are not end-to-end per-event latency or production throughput.
+**Locally verified November 25, 2026:** 56 unit tests passed; 3,000/3,000 Kafka messages acknowledged, 3,000 distinct events persisted by Spark, and 8 actual micro-batches captured. The browser dashboard displayed 3,000 input rows and a maximum Spark batch trigger duration of **3,162 ms**. See [Phase 11 instructions and results](docs/PHASE11_MICROBATCH_MONITORING.md). These Spark batch measurements are not end-to-end per-event latency or production throughput.
 
 ### ✅ Reliability demonstrated
 
