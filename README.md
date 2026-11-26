@@ -95,6 +95,12 @@ The dashboard now offers **Spark Micro-Batches**, which reads actual `StreamingQ
 
 **Locally verified November 25, 2026:** 56 unit tests passed; 3,000/3,000 Kafka messages acknowledged, 3,000 distinct events persisted by Spark, and 8 actual micro-batches captured. The browser dashboard displayed 3,000 input rows and a maximum Spark batch trigger duration of **3,162 ms**. See [Phase 11 instructions and results](docs/PHASE11_MICROBATCH_MONITORING.md). These Spark batch measurements are not end-to-end per-event latency or production throughput.
 
+### 🚦 Phase 12 — Local health checks and alerts (verification pending)
+
+The dashboard now includes **Health Alerts**, showing point-in-time Kafka/PostgreSQL TCP connectivity and saved benchmark aggregate report presence. A new read-only CLI (`python dashboard/alerts.py`) prints a JSON health snapshot with **OK / WARNING / CRITICAL / UNKNOWN** status; optional `--watch --interval 60` repeats checks in the foreground until Ctrl+C.
+
+These are **limited local connectivity/file-presence notices**, not live Spark health, Kafka protocol readiness, production alerts, or an end-to-end SLA. No background scheduler, email/webhook notifications, automated remediation, or dataset modifications are implemented. Local tests and browser verification are pending. See [Phase 12 health alert instructions](docs/PHASE12_HEALTH_ALERTS.md).
+
 ### ✅ Reliability demonstrated
 
 - **Event uniqueness:** 100K and 1M Kafka → Spark → Parquet outputs reconciled to unique event IDs and contiguous Kafka offsets on six partitions.
