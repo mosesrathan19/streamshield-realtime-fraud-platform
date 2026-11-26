@@ -7,3 +7,11 @@ outputs/
 *.sqlite
 .env
 .DS_Store
+.venv-spark/
+venv/
+*.log
+.coverage
+coverage/
+dist/
+build/
+*.egg-info/
