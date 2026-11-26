@@ -1,6 +1,6 @@
 # Phase 11 — Spark Micro-Batch Performance Monitoring
 
-**Status:** Code committed; requires fresh local tests, the one-time 3,000-event fixture run, and browser verification. No measured outcomes are claimed yet.
+**Status:** Locally verified November 25, 2026 — 56 tests passed; isolated Kafka fixture acknowledged 3,000 of 3,000 messages with zero failed/unflushed; Spark reported PASS with 3,000 persisted events, 3,000 distinct IDs, and 8 recorded micro-batches. The Streamlit Spark Micro-Batches screenshot confirmed 3,000 Spark input rows, 8 recorded batches, and a maximum observed trigger execution time of 3,162 ms.
 
 ## Why a new fixture?
 
@@ -88,4 +88,4 @@ This stops only the optional dashboard, not Kafka/PostgreSQL. Never run `docker 
 - Spark Micro-Batches page displays actual report and charts
 - Existing 100K/1M outputs and checkpoints remain untouched
 
-No phase should be marked verified until these are observed.
+**Verification complete:** All checklist items were reported or shown in the local results and browser screenshot on November 25, 2026. The performance values are specific to this local synthetic fixture, not an end-to-end latency benchmark.
