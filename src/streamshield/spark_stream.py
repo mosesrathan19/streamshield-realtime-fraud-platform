@@ -38,7 +38,8 @@ def schema():
     ])
 
 
-def parsed_stream(spark, brokers: str, topic: str = TOPIC,\n                  max_offsets_per_trigger: int | None = None):
+def parsed_stream(spark, brokers: str, topic: str = TOPIC,
+                  max_offsets_per_trigger: int | None = None):
     from pyspark.sql import functions as F
     reader = (spark.readStream.format("kafka")
               .option("kafka.bootstrap.servers", brokers)
