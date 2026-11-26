@@ -14,6 +14,10 @@ A local end-to-end, **synthetic transaction streaming** portfolio project demons
 
 **Start here:** [Architecture and interview guide](docs/ARCHITECTURE_AND_INTERVIEW_GUIDE.md) · [Dashboard run instructions](docs/PHASE9_LOCAL_MONITORING.md) · [Performance methodology](docs/PHASE6_BENCHMARK.md)
 
+### 🏁 Phase 13 — Final portfolio review (local verification pending)
+
+The [final review checklist](docs/PHASE13_FINAL_REVIEW.md) captures the remaining local unit-test and clean-working-tree checks. The README now distinguishes implemented architecture from historical plans; the [architecture and interview guide](docs/ARCHITECTURE_AND_INTERVIEW_GUIDE.md) explains design decisions, measured boundaries, reliability experiments, and a 45-second pitch. **Phase 13 has not yet been marked fully verified** until the updated repository's local test run is confirmed.
+
 ### 📸 Dashboard preview
 
 ![StreamShield overview — PostgreSQL transaction KPIs and merchant activity](docs/screenshots/01-overview.jpg)
