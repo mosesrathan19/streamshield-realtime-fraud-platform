@@ -1,6 +1,6 @@
 # Phase 12 — Read-Only Local Health Checks and Alerts
 
-**Status: implemented in GitHub; local unit tests and dashboard verification pending.**
+**Status: 62 local unit tests passed and dashboard browser-verified November 25, 2026 (November 26 UTC); one-shot CLI verification pending.**
 
 ## Scope
 
@@ -70,3 +70,7 @@ The CLI uses the existing port checks; a stopped Kafka or PostgreSQL container m
 4. Running repeated checks is optional, not a prerequisite for verification.
 
 Report the actual observed status; do not call a snapshot healthy solely because a dashboard was able to render.
+
+## Observed local verification
+
+On November 25, 2026 Pacific time, the user confirmed **62 tests passed** (no failures or errors) and supplied a browser screenshot of the **Health Alerts** page. At **2026-11-26T00:54:43Z**, the dashboard showed **overall OK**, **5 checks OK**, **0 warnings**, **0 critical connectivity failures**. The table showed Kafka broker TCP reachable at `kafka:19092`, PostgreSQL TCP reachable at `postgres:5432`, and three reports present: 100K Spark, 1M Spark, 1M producer. This validates the local browser presentation and the five checks; it does not demonstrate active Spark health, alert delivery, or the CLI. One-shot CLI verification remains pending.
